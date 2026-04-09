@@ -82,8 +82,12 @@ function buildCandidatePaths(basePath: string, componentName: string): string[] 
  * `interface <Name>Slots { ... }` block.
  */
 function parseSlots(content: string): string[] {
-  // Match the entire Slots interface body (supports multi-line)
-  const match = content.match(/interface\s+\w+Slots\s*\{([\s\S]*?)\}/);
+  // Match the entire Slots interface body.
+  // The pattern allows one level of nested braces to handle `props?: {}` in
+  // slot signatures without stopping prematurely at the first inner `}`.
+  const match = content.match(
+    /interface\s+\w+Slots\s*\{([^{}]*(?:\{[^{}]*\}[^{}]*)*)\}/,
+  );
   if (!match) {
     return [];
   }
