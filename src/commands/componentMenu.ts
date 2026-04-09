@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { DocPanel } from '../webview/panel';
+import { DocPanel, ComponentContext } from '../webview/panel';
 
 interface ActionItem extends vscode.QuickPickItem {
   action: 'openDocs';
@@ -7,13 +7,13 @@ interface ActionItem extends vscode.QuickPickItem {
 
 /**
  * Opens a QuickPick listing the actions available for a given component.
- * Designed as the extension's main extensibility point: new features
- * (copy props, show variants, insert snippet, favorites, ...) should
- * be added as new items here.
+ * When `context` is provided (tag URI + offset), the panel will also show
+ * the slot-insertion panel for the component.
  */
 export async function showComponentMenu(
   tagName: string,
   panel: DocPanel,
+  context?: ComponentContext,
 ): Promise<void> {
   if (!tagName) {
     return;
@@ -38,7 +38,7 @@ export async function showComponentMenu(
 
   switch (picked.action) {
     case 'openDocs':
-      panel.openComponent(tagName);
+      panel.openComponent(tagName, context);
       return;
   }
 }

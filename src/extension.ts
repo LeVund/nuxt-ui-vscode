@@ -41,8 +41,12 @@ export function activate(context: vscode.ExtensionContext): void {
     }),
     vscode.commands.registerCommand(
       'nuxtUi.showComponentMenu',
-      async (tagName: string) => {
-        await showComponentMenu(tagName, panel);
+      async (tagName: string, docUriStr?: string, tagOffset?: number) => {
+        const context =
+          typeof docUriStr === 'string' && typeof tagOffset === 'number'
+            ? { documentUri: vscode.Uri.parse(docUriStr), tagOffset, tagName }
+            : undefined;
+        await showComponentMenu(tagName, panel, context);
       },
     ),
   );

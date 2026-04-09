@@ -35,7 +35,11 @@ export class NuxtUiInlayHintsProvider implements vscode.InlayHintsProvider {
       labelPart.command = {
         command: 'nuxtUi.showComponentMenu',
         title: 'Nuxt UI actions',
-        arguments: [match.tagName],
+        arguments: [
+          match.tagName,
+          document.uri.toString(),
+          document.offsetAt(match.start),
+        ],
       };
 
       const hint = new vscode.InlayHint(
