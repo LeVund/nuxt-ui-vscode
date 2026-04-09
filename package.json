@@ -1,0 +1,82 @@
+{
+  "name": "nuxt-ui-vscode",
+  "displayName": "Nuxt UI",
+  "description": "Nuxt UI documentation and helpers inside VS Code",
+  "version": "0.0.1",
+  "publisher": "leVund",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "keywords": [
+    "nuxt",
+    "nuxt-ui",
+    "vue",
+    "documentation"
+  ],
+  "main": "./out/extension.js",
+  "activationEvents": [
+    "onLanguage:vue"
+  ],
+  "contributes": {
+    "commands": [
+      {
+        "command": "nuxtUi.openHome",
+        "title": "Nuxt UI: Open Documentation Home"
+      },
+      {
+        "command": "nuxtUi.openComponent",
+        "title": "Nuxt UI: Open Component Docs..."
+      },
+      {
+        "command": "nuxtUi.showComponentMenu",
+        "title": "Nuxt UI: Show Component Actions"
+      }
+    ],
+    "menus": {
+      "commandPalette": [
+        {
+          "command": "nuxtUi.showComponentMenu",
+          "when": "false"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "Nuxt UI",
+      "properties": {
+        "nuxtUi.version": {
+          "type": "string",
+          "enum": [
+            "auto",
+            "v3",
+            "v4"
+          ],
+          "default": "auto",
+          "description": "Which Nuxt UI documentation version to display. 'auto' reads the installed @nuxt/ui version from the workspace package.json."
+        },
+        "nuxtUi.inlayHints.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show a clickable inlay hint next to Nuxt UI component tags."
+        },
+        "nuxtUi.hover.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show a hover tooltip with actions on Nuxt UI component tags."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "@types/vscode": "^1.85.0",
+    "typescript": "^5.4.0"
+  }
+}
