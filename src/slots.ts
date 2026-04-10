@@ -206,6 +206,44 @@ function buildCandidatePaths(basePath: string, componentName: string): string[] 
 }
 
 /**
+ * Extract the first brace-delimited body after a type or interface declaration
+ * matching `pattern` (e.g. `interface XxxSlots` or `type XxxProps`).
+ *
+ * Uses brace-depth tracking so it handles any level of nesting.
+ */
+function extractDeclBody(content: string, pattern: RegExp): string | null {
+  const declStart = content.search(pattern);
+  if (declStart === -1) return null;
+
+  const bodyOpen = content.indexOf('{', declStart);
+  if (bodyOpen === -1) return null;
+
+  let depth = 1;
+  let pos = bodyOpen + 1;
+  while (pos < content.length && depth > 0) {
+    if (content[pos] === '{') depth++;
+    else if (content[pos] === '}') depth--;
+    pos++;
+  }
+  return content.slice(bodyOpen + 1, pos - 1);
+}
+
+/**
+ * Iteratively collapse all `{ ... }` blocks in `body` until stable.
+ * This leaves only top-level declarations, preventing false matches on
+ * inline type literals inside signatures.
+ */
+function flattenBraces(body: string): string {
+  let flat = body;
+  let prev: string;
+  do {
+    prev = flat;
+    flat = flat.replace(/\{[^{}]*\}/g, '{}');
+  } while (flat !== prev);
+  return flat;
+}
+
+/**
  * Parse the content of a `.vue.d.ts` file and extract slot names from either:
  *   - `interface <Name>Slots { ... }`
  *   - `(export )type <Name>Slots<...> = { ... }`
@@ -214,34 +252,11 @@ function buildCandidatePaths(basePath: string, componentName: string): string[] 
  * property-style slots (`slotName?: SlotProps<T>`).
  */
 function parseSlots(content: string): string[] {
-  // Match both interface and type-alias declarations ending in "Slots"
-  const slotsStart = content.search(/\b(?:type|interface)\s+\w+Slots\b/);
-  if (slotsStart === -1) return [];
+  const body = extractDeclBody(content, /\b(?:type|interface)\s+\w+Slots\b/);
+  if (!body) return [];
 
-  // Locate the opening brace of the slots block
-  const bodyOpen = content.indexOf('{', slotsStart);
-  if (bodyOpen === -1) return [];
+  const flat = flattenBraces(body);
 
-  // Walk forward tracking brace depth to find the matching closing brace
-  let depth = 1;
-  let pos = bodyOpen + 1;
-  while (pos < content.length && depth > 0) {
-    if (content[pos] === '{') depth++;
-    else if (content[pos] === '}') depth--;
-    pos++;
-  }
-  const body = content.slice(bodyOpen + 1, pos - 1);
-
-  // Iteratively collapse nested `{ ... }` blocks so only top-level slot
-  // declarations remain (avoids false matches on props inside slot signatures)
-  let flat = body;
-  let prev: string;
-  do {
-    prev = flat;
-    flat = flat.replace(/\{[^{}]*\}/g, '{}');
-  } while (flat !== prev);
-
-  // Extract slot names from the flattened top-level declarations.
   // Handles: slotName(   slotName?(   slotName?:   slotName:
   const slots: string[] = [];
   const slotRe = /^\s*(\w+)\s*\??\s*[:(]/gm;
@@ -250,4 +265,52 @@ function parseSlots(content: string): string[] {
     slots.push(m[1]);
   }
   return slots;
+}
+
+/**
+ * Parse the content of a `.vue.d.ts` file and extract prop names from either:
+ *   - `interface <Name>Props { ... }`
+ *   - `(export )type <Name>Props<...> = { ... }`
+ */
+function parseProps(content: string): string[] {
+  const body = extractDeclBody(content, /\b(?:type|interface)\s+\w+Props\b/);
+  if (!body) return [];
+
+  const flat = flattenBraces(body);
+
+  // Only property-style declarations (props are never method signatures)
+  const props: string[] = [];
+  const propRe = /^\s*(\w+)\s*\??\s*:/gm;
+  let m: RegExpExecArray | null;
+  while ((m = propRe.exec(flat)) !== null) {
+    props.push(m[1]);
+  }
+  return props;
+}
+
+/**
+ * Reads the props defined in a Nuxt UI component's TypeScript declaration file.
+ * Same resolution strategy as `readComponentSlots`.
+ */
+export function readComponentProps(componentName: string): string[] {
+  const root = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+  if (!root) return [];
+
+  const basePath = resolveNuxtUiComponentsBase(root);
+  if (!basePath) return [];
+
+  const candidates = buildCandidatePaths(basePath, componentName);
+  for (const candidate of candidates) {
+    try {
+      const content = fs.readFileSync(candidate, 'utf8');
+      const props = parseProps(content);
+      if (props.length > 0) {
+        console.log('[nuxt-ui] Found props at:', candidate);
+        return props;
+      }
+    } catch {
+      // file not found — try next candidate
+    }
+  }
+  return [];
 }

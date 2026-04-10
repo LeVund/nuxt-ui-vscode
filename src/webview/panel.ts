@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import { VersionService } from '../version';
-import { tagToSlug } from '../components';
-import { readComponentSlots } from '../slots';
+import { tagToSlug, toKebabCase } from '../components';
+import { readComponentSlots, readComponentProps } from '../slots';
 
 /**
  * Contextual information about the source component tag that triggered the
@@ -74,10 +74,17 @@ export class DocPanel {
       });
 
       this.panel.webview.onDidReceiveMessage(async (msg: unknown) => {
-        if (msg && typeof msg === 'object' && (msg as Record<string, unknown>).command === 'insertSlot') {
-          const slotName = (msg as Record<string, unknown>).slotName as string;
+        if (!msg || typeof msg !== 'object') return;
+        const m = msg as Record<string, unknown>;
+        if (m.command === 'insertSlot') {
+          const slotName = m.slotName as string;
           if (typeof slotName === 'string' && slotName.length > 0) {
             await this.handleInsertSlot(slotName);
+          }
+        } else if (m.command === 'insertProp') {
+          const propName = m.propName as string;
+          if (typeof propName === 'string' && propName.length > 0) {
+            await this.handleInsertProp(propName);
           }
         }
       });
@@ -101,13 +108,12 @@ export class DocPanel {
     }
     this.currentUrl = url;
 
-    // Read slots only when we have component context.
-    const slots =
-      context !== undefined
-        ? readComponentSlots(context.tagName.slice(1)) // strip 'U' prefix
-        : [];
+    // Read slots and props only when we have component context.
+    const componentName = context !== undefined ? context.tagName.slice(1) : '';
+    const slots = context !== undefined ? readComponentSlots(componentName) : [];
+    const props = context !== undefined ? readComponentProps(componentName) : [];
 
-    this.panel.webview.html = renderHtml(url, context, slots);
+    this.panel.webview.html = renderHtml(url, context, slots, props);
   }
 
   private async handleInsertSlot(slotName: string): Promise<void> {
@@ -116,6 +122,14 @@ export class DocPanel {
       return;
     }
     await insertSlot(context, slotName);
+  }
+
+  private async handleInsertProp(propName: string): Promise<void> {
+    const context = this.currentContext;
+    if (!context) {
+      return;
+    }
+    await insertProp(context, propName);
   }
 }
 
@@ -205,6 +219,71 @@ async function insertSlot(context: ComponentContext, slotName: string): Promise<
   await vscode.workspace.applyEdit(edit);
 }
 
+// =============================================================================
+// Prop insertion
+// =============================================================================
+
+async function insertProp(context: ComponentContext, propName: string): Promise<void> {
+  let document: vscode.TextDocument;
+  try {
+    document = await vscode.workspace.openTextDocument(context.documentUri);
+  } catch {
+    void vscode.window.showErrorMessage('Could not open the source file.');
+    return;
+  }
+
+  const text = document.getText();
+  const tagStart = context.tagOffset;
+  const tagName = context.tagName;
+
+  // Scan forward from the end of the tag name to find the closing `>` or `/>`
+  let i = tagStart + 1 + tagName.length;
+  let inString: string | null = null;
+  let insertBeforeIdx = -1;
+  let isSelfClosing = false;
+
+  while (i < text.length) {
+    const ch = text[i];
+    if (inString) {
+      if (ch === inString) inString = null;
+    } else if (ch === '"' || ch === "'") {
+      inString = ch;
+    } else if (ch === '/' && i + 1 < text.length && text[i + 1] === '>') {
+      insertBeforeIdx = i;
+      isSelfClosing = true;
+      break;
+    } else if (ch === '>') {
+      insertBeforeIdx = i;
+      break;
+    }
+    i++;
+  }
+
+  if (insertBeforeIdx === -1) {
+    void vscode.window.showWarningMessage(`Could not parse the opening tag of <${tagName}>.`);
+    return;
+  }
+
+  const attrName = toKebabCase(propName);
+  const openTagText = text.slice(tagStart, insertBeforeIdx + (isSelfClosing ? 2 : 1));
+
+  // Check if the prop is already present in the opening tag
+  if (new RegExp(`\\b:?${attrName}\\s*=|v-bind:${attrName}\\s*=`).test(openTagText)) {
+    void vscode.window.showInformationMessage(`Prop "${attrName}" is already set on <${tagName}>.`);
+    return;
+  }
+
+  // Insert `:attr-name=""` just before the closing `>` or `/>`.
+  // Respect the character preceding so we never double-space.
+  const charBefore = insertBeforeIdx > 0 ? text[insertBeforeIdx - 1] : '';
+  const prefix = charBefore === ' ' || charBefore === '\t' ? '' : ' ';
+  const attrStr = `:${attrName}=""`;
+
+  const edit = new vscode.WorkspaceEdit();
+  edit.insert(document.uri, document.positionAt(insertBeforeIdx), `${prefix}${attrStr}`);
+  await vscode.workspace.applyEdit(edit);
+}
+
 /**
  * Find the character index of the closing `</tagName>` that matches the
  * opening tag, starting the search from `fromIndex`.
@@ -269,12 +348,12 @@ function extractPath(url: string): string {
   }
 }
 
-function renderHtml(url: string, context: ComponentContext | undefined, slots: string[]): string {
+function renderHtml(url: string, context: ComponentContext | undefined, slots: string[], props: string[]): string {
   const origin = new URL(url).origin;
   const csp = ["default-src 'none'", `frame-src ${origin}`, "style-src 'unsafe-inline'", "script-src 'unsafe-inline'"].join('; ');
 
-  // Always show the slots section when a component context is available,
-  // even if no slots were found (e.g. d.ts not yet resolved).
+  // Always show the props/slots sections when a component context is available.
+  const propsSection = context !== undefined ? renderPropsSection(context.tagName, props) : '';
   const slotsSection = context !== undefined ? renderSlotsSection(context.tagName, slots) : '';
 
   return /* html */ `<!DOCTYPE html>
@@ -408,6 +487,7 @@ function renderHtml(url: string, context: ComponentContext | undefined, slots: s
 </head>
 <body>
   <div class="layout">
+    ${propsSection}
     ${slotsSection}
     <div class="accordion docs-accordion is-open" id="docs-accordion">
       <div class="accordion-header" data-target="docs-accordion">
@@ -438,6 +518,13 @@ function renderHtml(url: string, context: ComponentContext | undefined, slots: s
         vscode.postMessage({ command: 'insertSlot', slotName: btn.dataset.slot });
       });
     });
+
+    // Prop insertion
+    document.querySelectorAll('.prop-btn').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        vscode.postMessage({ command: 'insertProp', propName: btn.dataset.prop });
+      });
+    });
   </script>
 </body>
 </html>`;
@@ -457,6 +544,29 @@ function renderSlotsSection(tagName: string, slots: string[]): string {
       <div class="accordion-header" data-target="slots-accordion">
         <span class="chevron">▶</span>
         Slots — ${escapeHtml(tagName)}
+      </div>
+      <div class="accordion-body slots-body">
+        ${body}
+      </div>
+    </div>`;
+}
+
+function renderPropsSection(tagName: string, props: string[]): string {
+  const body =
+    props.length > 0
+      ? props
+          .map((prop) => {
+            const attr = toKebabCase(prop);
+            return `<button class="prop-btn slot-btn" data-prop="${escapeAttr(prop)}">:${escapeHtml(attr)}</button>`;
+          })
+          .join('\n        ')
+      : `<span class="slots-empty">No props found for ${escapeHtml(tagName)}</span>`;
+
+  return /* html */ `
+    <div class="accordion is-open" id="props-accordion">
+      <div class="accordion-header" data-target="props-accordion">
+        <span class="chevron">▶</span>
+        Props — ${escapeHtml(tagName)}
       </div>
       <div class="accordion-body slots-body">
         ${body}
