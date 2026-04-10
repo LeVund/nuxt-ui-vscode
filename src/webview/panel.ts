@@ -53,9 +53,7 @@ export class DocPanel {
   openComponent(tagName: string, context?: ComponentContext): void {
     const slug = tagToSlug(tagName);
     if (!slug) {
-      void vscode.window.showWarningMessage(
-        `"${tagName}" is not a known Nuxt UI component.`,
-      );
+      void vscode.window.showWarningMessage(`"${tagName}" is not a known Nuxt UI component.`);
       return;
     }
     const url = `${this.version.current.baseUrl}${componentPath(this.version.current.version, slug)}`;
@@ -66,30 +64,17 @@ export class DocPanel {
   // Private helpers
   // -------------------------------------------------------------------------
 
-  private show(
-    title: string,
-    url: string,
-    context: ComponentContext | undefined,
-  ): void {
+  private show(title: string, url: string, context: ComponentContext | undefined): void {
     this.currentContext = context;
 
     if (!this.panel) {
-      this.panel = vscode.window.createWebviewPanel(
-        DocPanel.VIEW_TYPE,
-        title,
-        vscode.ViewColumn.Beside,
-        {
-          enableScripts: true,
-          retainContextWhenHidden: true,
-        },
-      );
+      this.panel = vscode.window.createWebviewPanel(DocPanel.VIEW_TYPE, title, vscode.ViewColumn.Beside, {
+        enableScripts: true,
+        retainContextWhenHidden: true,
+      });
 
       this.panel.webview.onDidReceiveMessage(async (msg: unknown) => {
-        if (
-          msg &&
-          typeof msg === 'object' &&
-          (msg as Record<string, unknown>).command === 'insertSlot'
-        ) {
+        if (msg && typeof msg === 'object' && (msg as Record<string, unknown>).command === 'insertSlot') {
           const slotName = (msg as Record<string, unknown>).slotName as string;
           if (typeof slotName === 'string' && slotName.length > 0) {
             await this.handleInsertSlot(slotName);
@@ -138,10 +123,7 @@ export class DocPanel {
 // Slot insertion
 // =============================================================================
 
-async function insertSlot(
-  context: ComponentContext,
-  slotName: string,
-): Promise<void> {
+async function insertSlot(context: ComponentContext, slotName: string): Promise<void> {
   let document: vscode.TextDocument;
   try {
     document = await vscode.workspace.openTextDocument(context.documentUri);
@@ -180,9 +162,7 @@ async function insertSlot(
   }
 
   if (openTagEnd === -1) {
-    void vscode.window.showWarningMessage(
-      `Could not parse the opening tag of <${tagName}>.`,
-    );
+    void vscode.window.showWarningMessage(`Could not parse the opening tag of <${tagName}>.`);
     return;
   }
 
@@ -197,18 +177,14 @@ async function insertSlot(
     const slashGtPos = document.positionAt(openTagEnd - 2);
     const afterGtPos = document.positionAt(openTagEnd);
     const replacement =
-      `>\n${slotIndent}<template #${slotName}>\n` +
-      `${slotIndent}</template>\n` +
-      `${indentation}</${tagName}>`;
+      `>\n${slotIndent}<template #${slotName}>\n` + `${slotIndent}</template>\n` + `${indentation}</${tagName}>`;
     edit.replace(document.uri, new vscode.Range(slashGtPos, afterGtPos), replacement);
   } else {
     // Find the matching closing tag. We use a simple depth counter to handle
     // nested same-name components.
     const closingIdx = findMatchingClose(text, tagName, openTagEnd);
     if (closingIdx === -1) {
-      void vscode.window.showWarningMessage(
-        `Could not find the closing </${tagName}> tag.`,
-      );
+      void vscode.window.showWarningMessage(`Could not find the closing </${tagName}> tag.`);
       return;
     }
 
@@ -216,18 +192,13 @@ async function insertSlot(
 
     // Check if the slot is already present.
     if (new RegExp(`#${slotName}\\b`).test(innerContent)) {
-      void vscode.window.showInformationMessage(
-        `Slot #${slotName} is already used in <${tagName}>.`,
-      );
+      void vscode.window.showInformationMessage(`Slot #${slotName} is already used in <${tagName}>.`);
       return;
     }
 
     // Insert the new slot template just before the closing tag.
     const insertPos = document.positionAt(closingIdx);
-    const insertion =
-      `${slotIndent}<template #${slotName}>\n` +
-      `${slotIndent}</template>\n` +
-      `${indentation}`;
+    const insertion = `${slotIndent}<template #${slotName}>\n` + `${slotIndent}</template>\n` + `${indentation}`;
     edit.insert(document.uri, insertPos, insertion);
   }
 
@@ -240,11 +211,7 @@ async function insertSlot(
  *
  * Handles nested same-name components by counting open/close pairs.
  */
-function findMatchingClose(
-  text: string,
-  tagName: string,
-  fromIndex: number,
-): number {
+function findMatchingClose(text: string, tagName: string, fromIndex: number): number {
   const openRe = new RegExp(`<${tagName}\\b`, 'g');
   const closeRe = new RegExp(`<\\/${tagName}>`, 'g');
 
@@ -276,10 +243,7 @@ function findMatchingClose(
   return -1;
 }
 
-function getLineIndentation(
-  document: vscode.TextDocument,
-  line: number,
-): string {
+function getLineIndentation(document: vscode.TextDocument, line: number): string {
   const lineText = document.lineAt(line).text;
   return lineText.match(/^(\s*)/)?.[1] ?? '';
 }
@@ -305,21 +269,13 @@ function extractPath(url: string): string {
   }
 }
 
-function renderHtml(
-  url: string,
-  context: ComponentContext | undefined,
-  slots: string[],
-): string {
+function renderHtml(url: string, context: ComponentContext | undefined, slots: string[]): string {
   const origin = new URL(url).origin;
-  const csp = [
-    "default-src 'none'",
-    `frame-src ${origin}`,
-    "style-src 'unsafe-inline'",
-    "script-src 'unsafe-inline'",
-  ].join('; ');
+  const csp = ["default-src 'none'", `frame-src ${origin}`, "style-src 'unsafe-inline'", "script-src 'unsafe-inline'"].join('; ');
 
-  const hasSlots = context !== undefined && slots.length > 0;
-  const slotsSection = hasSlots ? renderSlotsSection(context!.tagName, slots) : '';
+  // Always show the slots section when a component context is available,
+  // even if no slots were found (e.g. d.ts not yet resolved).
+  const slotsSection = context !== undefined ? renderSlotsSection(context.tagName, slots) : '';
 
   return /* html */ `<!DOCTYPE html>
 <html lang="en">
@@ -417,6 +373,12 @@ function renderHtml(
       border-color: var(--vscode-focusBorder, #007fd4);
     }
 
+    .slots-empty {
+      font-size: 12px;
+      opacity: 0.5;
+      font-style: italic;
+    }
+
     /* ---- Docs section ---- */
     .accordion.docs-accordion {
       flex: 1;
@@ -482,12 +444,13 @@ function renderHtml(
 }
 
 function renderSlotsSection(tagName: string, slots: string[]): string {
-  const buttons = slots
-    .map(
-      (slot) =>
-        `<button class="slot-btn" data-slot="${escapeAttr(slot)}">#${escapeHtml(slot)}</button>`,
-    )
-    .join('\n        ');
+  const body =
+    slots.length > 0
+      ? slots
+          .map((slot) => `<button class="slot-btn" data-slot="${escapeAttr(slot)}">#${escapeHtml(slot)}</button>`)
+          .join('\n        ')
+      : // No declaration file found or component has no named slots.
+        `<span class="slots-empty">No slots found for ${escapeHtml(tagName)}</span>`;
 
   return /* html */ `
     <div class="accordion is-open" id="slots-accordion">
@@ -496,22 +459,15 @@ function renderSlotsSection(tagName: string, slots: string[]): string {
         Slots — ${escapeHtml(tagName)}
       </div>
       <div class="accordion-body slots-body">
-        ${buttons}
+        ${body}
       </div>
     </div>`;
 }
 
 function escapeAttr(value: string): string {
-  return value
-    .replace(/&/g, '&amp;')
-    .replace(/"/g, '&quot;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
+  return value.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
 function escapeHtml(value: string): string {
-  return value
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
+  return value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
