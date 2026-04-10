@@ -314,3 +314,81 @@ export function readComponentProps(componentName: string): string[] {
   }
   return [];
 }
+
+/**
+ * Parse the content of a `.vue.d.ts` file and extract the keys accepted by the
+ * component's `ui` prop. Two strategies are tried in order:
+ *
+ * 1. Inline object literal: `ui?: { root?: string; item?: string; … }`
+ *    (TypeScript sometimes fully expands indexed-access types in .d.ts output).
+ *
+ * 2. String literal union inside `Pick<…, 'k1' | 'k2' | …>` — these appear on
+ *    item-level interfaces (e.g. `AccordionItem.ui`) and give at minimum a
+ *    representative subset of valid ui keys.
+ */
+function parseUiKeys(content: string): string[] {
+  // Strategy 1: ui?: { key?: T; … } inline object type
+  const uiInlineRe = /\bui\s*\??\s*:\s*\{/g;
+  let m: RegExpExecArray | null;
+  while ((m = uiInlineRe.exec(content)) !== null) {
+    const braceStart = m.index + m[0].length - 1; // the '{' at end of match
+    let depth = 1;
+    let pos = braceStart + 1;
+    while (pos < content.length && depth > 0) {
+      if (content[pos] === '{') depth++;
+      else if (content[pos] === '}') depth--;
+      pos++;
+    }
+    const body = content.slice(braceStart + 1, pos - 1);
+    const flat = flattenBraces(body);
+    const keys: string[] = [];
+    const keyRe = /^\s*(\w+)\s*\??\s*:/gm;
+    let km: RegExpExecArray | null;
+    while ((km = keyRe.exec(flat)) !== null) {
+      keys.push(km[1]);
+    }
+    if (keys.length > 0) return keys;
+  }
+
+  // Strategy 2: Pick<…, 'k1' | 'k2' | …> — union all string literal keys.
+  // These appear on item-level ui types (e.g. AccordionItem.ui) and give at
+  // minimum a useful representative subset.
+  const pickRe = /Pick\s*<[^,>]+,\s*((?:'[^']+'\s*(?:\|\s*)?)+)>/g;
+  const pickKeys: string[] = [];
+  let pm: RegExpExecArray | null;
+  while ((pm = pickRe.exec(content)) !== null) {
+    const litRe = /'([^']+)'/g;
+    let lm: RegExpExecArray | null;
+    while ((lm = litRe.exec(pm[1])) !== null) {
+      if (!pickKeys.includes(lm[1])) pickKeys.push(lm[1]);
+    }
+  }
+  return pickKeys;
+}
+
+/**
+ * Reads the ui-prop keys for a Nuxt UI component's TypeScript declaration file.
+ * Same resolution strategy as `readComponentSlots`.
+ */
+export function readComponentUiKeys(componentName: string): string[] {
+  const root = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+  if (!root) return [];
+
+  const basePath = resolveNuxtUiComponentsBase(root);
+  if (!basePath) return [];
+
+  const candidates = buildCandidatePaths(basePath, componentName);
+  for (const candidate of candidates) {
+    try {
+      const content = fs.readFileSync(candidate, 'utf8');
+      const keys = parseUiKeys(content);
+      if (keys.length > 0) {
+        console.log('[nuxt-ui] Found ui keys at:', candidate);
+        return keys;
+      }
+    } catch {
+      // file not found — try next candidate
+    }
+  }
+  return [];
+}

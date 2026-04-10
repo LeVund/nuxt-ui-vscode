@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import { VersionService } from '../version';
 import { tagToSlug, toKebabCase } from '../components';
-import { readComponentSlots, readComponentProps } from '../slots';
+import { readComponentSlots, readComponentProps, readComponentUiKeys } from '../slots';
 
 /**
  * Contextual information about the source component tag that triggered the
@@ -86,6 +86,11 @@ export class DocPanel {
           if (typeof propName === 'string' && propName.length > 0) {
             await this.handleInsertProp(propName);
           }
+        } else if (m.command === 'insertUiKey') {
+          const keyName = m.keyName as string;
+          if (typeof keyName === 'string' && keyName.length > 0) {
+            await this.handleInsertUiKey(keyName);
+          }
         }
       });
 
@@ -108,12 +113,13 @@ export class DocPanel {
     }
     this.currentUrl = url;
 
-    // Read slots and props only when we have component context.
+    // Read slots, props, and ui keys only when we have component context.
     const componentName = context !== undefined ? context.tagName.slice(1) : '';
     const slots = context !== undefined ? readComponentSlots(componentName) : [];
     const props = context !== undefined ? readComponentProps(componentName) : [];
+    const uiKeys = context !== undefined ? readComponentUiKeys(componentName) : [];
 
-    this.panel.webview.html = renderHtml(url, context, slots, props);
+    this.panel.webview.html = renderHtml(url, context, slots, props, uiKeys);
   }
 
   private async handleInsertSlot(slotName: string): Promise<void> {
@@ -126,10 +132,14 @@ export class DocPanel {
 
   private async handleInsertProp(propName: string): Promise<void> {
     const context = this.currentContext;
-    if (!context) {
-      return;
-    }
+    if (!context) return;
     await insertProp(context, propName);
+  }
+
+  private async handleInsertUiKey(keyName: string): Promise<void> {
+    const context = this.currentContext;
+    if (!context) return;
+    await insertUiKey(context, keyName);
   }
 }
 
@@ -284,6 +294,114 @@ async function insertProp(context: ComponentContext, propName: string): Promise<
   await vscode.workspace.applyEdit(edit);
 }
 
+// =============================================================================
+// UI key insertion
+// =============================================================================
+
+async function insertUiKey(context: ComponentContext, keyName: string): Promise<void> {
+  let document: vscode.TextDocument;
+  try {
+    document = await vscode.workspace.openTextDocument(context.documentUri);
+  } catch {
+    void vscode.window.showErrorMessage('Could not open the source file.');
+    return;
+  }
+
+  const text = document.getText();
+  const tagStart = context.tagOffset;
+  const tagName = context.tagName;
+
+  // Find the extent of the opening tag (same tracking logic as insertProp)
+  let i = tagStart + 1 + tagName.length;
+  let inString: string | null = null;
+  let closeIdx = -1;
+  let selfClosing = false;
+
+  while (i < text.length) {
+    const ch = text[i];
+    if (inString) {
+      if (ch === inString) inString = null;
+    } else if (ch === '"' || ch === "'") {
+      inString = ch;
+    } else if (ch === '/' && i + 1 < text.length && text[i + 1] === '>') {
+      closeIdx = i;
+      selfClosing = true;
+      break;
+    } else if (ch === '>') {
+      closeIdx = i;
+      break;
+    }
+    i++;
+  }
+
+  if (closeIdx === -1) {
+    void vscode.window.showWarningMessage(`Could not parse the opening tag of <${tagName}>.`);
+    return;
+  }
+
+  // tagText covers everything from `<TagName` up to (not including) `>` or `/`
+  const tagText = text.slice(tagStart, closeIdx);
+
+  // Look for :ui= or v-bind:ui= attribute
+  const uiAttrMatch = /(?::ui|v-bind:ui)\s*=\s*(["'])/.exec(tagText);
+
+  if (!uiAttrMatch) {
+    // No :ui attribute yet — insert `:ui="{ keyName: '' }"`
+    const charBefore = closeIdx > 0 ? text[closeIdx - 1] : '';
+    const prefix = charBefore === ' ' || charBefore === '\t' ? '' : ' ';
+    const edit = new vscode.WorkspaceEdit();
+    edit.insert(document.uri, document.positionAt(closeIdx), `${prefix}:ui="{ ${keyName}: '' }"`);
+    await vscode.workspace.applyEdit(edit);
+    return;
+  }
+
+  // :ui= found — parse the attribute value
+  const quoteChar = uiAttrMatch[1];
+  // Absolute position in the document text right after the opening quote
+  const attrValueStart = tagStart + uiAttrMatch.index + uiAttrMatch[0].length;
+
+  // Find the matching closing quote. Vue template values can't contain the
+  // outer quote character unescaped, so a simple forward scan is correct.
+  let closingQuotePos = -1;
+  for (let j = attrValueStart; j < text.length; j++) {
+    if (text[j] === quoteChar) {
+      closingQuotePos = j;
+      break;
+    }
+  }
+
+  if (closingQuotePos === -1) {
+    void vscode.window.showWarningMessage(`Could not parse the :ui attribute value of <${tagName}>.`);
+    return;
+  }
+
+  const attrValue = text.slice(attrValueStart, closingQuotePos);
+
+  // Guard against duplicate key
+  if (new RegExp(`\\b${keyName}\\s*:`).test(attrValue)) {
+    void vscode.window.showInformationMessage(`UI key "${keyName}" is already set on <${tagName}>.`);
+    return;
+  }
+
+  // Find the closing `}` of the object to determine the insertion point
+  const lastBrace = attrValue.lastIndexOf('}');
+  if (lastBrace === -1) {
+    void vscode.window.showWarningMessage(`Could not locate the :ui object for <${tagName}>.`);
+    return;
+  }
+
+  // If the object already has content, prepend a comma
+  const innerContent = attrValue
+    .slice(0, lastBrace)
+    .replace(/^\s*\{/, '')
+    .trim();
+  const insertion = innerContent.length > 0 ? `, ${keyName}: ''` : `${keyName}: ''`;
+
+  const edit = new vscode.WorkspaceEdit();
+  edit.insert(document.uri, document.positionAt(attrValueStart + lastBrace), insertion);
+  await vscode.workspace.applyEdit(edit);
+}
+
 /**
  * Find the character index of the closing `</tagName>` that matches the
  * opening tag, starting the search from `fromIndex`.
@@ -348,12 +466,19 @@ function extractPath(url: string): string {
   }
 }
 
-function renderHtml(url: string, context: ComponentContext | undefined, slots: string[], props: string[]): string {
+function renderHtml(
+  url: string,
+  context: ComponentContext | undefined,
+  slots: string[],
+  props: string[],
+  uiKeys: string[],
+): string {
   const origin = new URL(url).origin;
   const csp = ["default-src 'none'", `frame-src ${origin}`, "style-src 'unsafe-inline'", "script-src 'unsafe-inline'"].join('; ');
 
   // Always show the props/slots sections when a component context is available.
   const propsSection = context !== undefined ? renderPropsSection(context.tagName, props) : '';
+  const uiSection = context !== undefined ? renderUiSection(context.tagName, uiKeys) : '';
   const slotsSection = context !== undefined ? renderSlotsSection(context.tagName, slots) : '';
 
   return /* html */ `<!DOCTYPE html>
@@ -488,6 +613,7 @@ function renderHtml(url: string, context: ComponentContext | undefined, slots: s
 <body>
   <div class="layout">
     ${propsSection}
+    ${uiSection}
     ${slotsSection}
     <div class="accordion docs-accordion is-open" id="docs-accordion">
       <div class="accordion-header" data-target="docs-accordion">
@@ -523,6 +649,13 @@ function renderHtml(url: string, context: ComponentContext | undefined, slots: s
     document.querySelectorAll('.prop-btn').forEach(function(btn) {
       btn.addEventListener('click', function() {
         vscode.postMessage({ command: 'insertProp', propName: btn.dataset.prop });
+      });
+    });
+
+    // UI key insertion
+    document.querySelectorAll('.ui-key-btn').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        vscode.postMessage({ command: 'insertUiKey', keyName: btn.dataset.uiKey });
       });
     });
   </script>
@@ -567,6 +700,26 @@ function renderPropsSection(tagName: string, props: string[]): string {
       <div class="accordion-header" data-target="props-accordion">
         <span class="chevron">▶</span>
         Props — ${escapeHtml(tagName)}
+      </div>
+      <div class="accordion-body slots-body">
+        ${body}
+      </div>
+    </div>`;
+}
+
+function renderUiSection(tagName: string, uiKeys: string[]): string {
+  const body =
+    uiKeys.length > 0
+      ? uiKeys
+          .map((key) => `<button class="ui-key-btn slot-btn" data-ui-key="${escapeAttr(key)}">${escapeHtml(key)}</button>`)
+          .join('\n        ')
+      : `<span class="slots-empty">No ui keys found for ${escapeHtml(tagName)}</span>`;
+
+  return /* html */ `
+    <div class="accordion is-open" id="ui-accordion">
+      <div class="accordion-header" data-target="ui-accordion">
+        <span class="chevron">▶</span>
+        UI — ${escapeHtml(tagName)}
       </div>
       <div class="accordion-body slots-body">
         ${body}
