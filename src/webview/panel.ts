@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import { VersionService } from '../version';
 import { tagToSlug, toKebabCase } from '../components';
-import { readComponentInfo, resolveDeclarationPath } from '../slots';
+import { readComponentInfo, resolveDeclarationPath } from '../utils/typeFileResolver';
 import { renderHtml, homePath, componentPath, extractPath } from './html';
 
 export interface ComponentContext {
