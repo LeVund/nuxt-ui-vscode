@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import { VersionService } from '../version';
-import { tagToSlug } from '../components';
-import { readComponentSlots } from '../slots';
+import { tagToSlug, toKebabCase } from '../components';
+import { readComponentSlots, readComponentProps, readComponentUiKeys } from '../slots';
 
 /**
  * Contextual information about the source component tag that triggered the
@@ -53,9 +53,7 @@ export class DocPanel {
   openComponent(tagName: string, context?: ComponentContext): void {
     const slug = tagToSlug(tagName);
     if (!slug) {
-      void vscode.window.showWarningMessage(
-        `"${tagName}" is not a known Nuxt UI component.`,
-      );
+      void vscode.window.showWarningMessage(`"${tagName}" is not a known Nuxt UI component.`);
       return;
     }
     const url = `${this.version.current.baseUrl}${componentPath(this.version.current.version, slug)}`;
@@ -66,33 +64,32 @@ export class DocPanel {
   // Private helpers
   // -------------------------------------------------------------------------
 
-  private show(
-    title: string,
-    url: string,
-    context: ComponentContext | undefined,
-  ): void {
+  private show(title: string, url: string, context: ComponentContext | undefined): void {
     this.currentContext = context;
 
     if (!this.panel) {
-      this.panel = vscode.window.createWebviewPanel(
-        DocPanel.VIEW_TYPE,
-        title,
-        vscode.ViewColumn.Beside,
-        {
-          enableScripts: true,
-          retainContextWhenHidden: true,
-        },
-      );
+      this.panel = vscode.window.createWebviewPanel(DocPanel.VIEW_TYPE, title, vscode.ViewColumn.Beside, {
+        enableScripts: true,
+        retainContextWhenHidden: true,
+      });
 
       this.panel.webview.onDidReceiveMessage(async (msg: unknown) => {
-        if (
-          msg &&
-          typeof msg === 'object' &&
-          (msg as Record<string, unknown>).command === 'insertSlot'
-        ) {
-          const slotName = (msg as Record<string, unknown>).slotName as string;
+        if (!msg || typeof msg !== 'object') return;
+        const m = msg as Record<string, unknown>;
+        if (m.command === 'insertSlot') {
+          const slotName = m.slotName as string;
           if (typeof slotName === 'string' && slotName.length > 0) {
             await this.handleInsertSlot(slotName);
+          }
+        } else if (m.command === 'insertProp') {
+          const propName = m.propName as string;
+          if (typeof propName === 'string' && propName.length > 0) {
+            await this.handleInsertProp(propName);
+          }
+        } else if (m.command === 'insertUiKey') {
+          const keyName = m.keyName as string;
+          if (typeof keyName === 'string' && keyName.length > 0) {
+            await this.handleInsertUiKey(keyName);
           }
         }
       });
@@ -116,13 +113,13 @@ export class DocPanel {
     }
     this.currentUrl = url;
 
-    // Read slots only when we have component context.
-    const slots =
-      context !== undefined
-        ? readComponentSlots(context.tagName.slice(1)) // strip 'U' prefix
-        : [];
+    // Read slots, props, and ui keys only when we have component context.
+    const componentName = context !== undefined ? context.tagName.slice(1) : '';
+    const slots = context !== undefined ? readComponentSlots(componentName) : [];
+    const props = context !== undefined ? readComponentProps(componentName) : [];
+    const uiKeys = context !== undefined ? readComponentUiKeys(componentName) : [];
 
-    this.panel.webview.html = renderHtml(url, context, slots);
+    this.panel.webview.html = renderHtml(url, context, slots, props, uiKeys);
   }
 
   private async handleInsertSlot(slotName: string): Promise<void> {
@@ -132,16 +129,25 @@ export class DocPanel {
     }
     await insertSlot(context, slotName);
   }
+
+  private async handleInsertProp(propName: string): Promise<void> {
+    const context = this.currentContext;
+    if (!context) return;
+    await insertProp(context, propName);
+  }
+
+  private async handleInsertUiKey(keyName: string): Promise<void> {
+    const context = this.currentContext;
+    if (!context) return;
+    await insertUiKey(context, keyName);
+  }
 }
 
 // =============================================================================
 // Slot insertion
 // =============================================================================
 
-async function insertSlot(
-  context: ComponentContext,
-  slotName: string,
-): Promise<void> {
+async function insertSlot(context: ComponentContext, slotName: string): Promise<void> {
   let document: vscode.TextDocument;
   try {
     document = await vscode.workspace.openTextDocument(context.documentUri);
@@ -180,9 +186,7 @@ async function insertSlot(
   }
 
   if (openTagEnd === -1) {
-    void vscode.window.showWarningMessage(
-      `Could not parse the opening tag of <${tagName}>.`,
-    );
+    void vscode.window.showWarningMessage(`Could not parse the opening tag of <${tagName}>.`);
     return;
   }
 
@@ -197,18 +201,14 @@ async function insertSlot(
     const slashGtPos = document.positionAt(openTagEnd - 2);
     const afterGtPos = document.positionAt(openTagEnd);
     const replacement =
-      `>\n${slotIndent}<template #${slotName}>\n` +
-      `${slotIndent}</template>\n` +
-      `${indentation}</${tagName}>`;
+      `>\n${slotIndent}<template #${slotName}>\n` + `${slotIndent}</template>\n` + `${indentation}</${tagName}>`;
     edit.replace(document.uri, new vscode.Range(slashGtPos, afterGtPos), replacement);
   } else {
     // Find the matching closing tag. We use a simple depth counter to handle
     // nested same-name components.
     const closingIdx = findMatchingClose(text, tagName, openTagEnd);
     if (closingIdx === -1) {
-      void vscode.window.showWarningMessage(
-        `Could not find the closing </${tagName}> tag.`,
-      );
+      void vscode.window.showWarningMessage(`Could not find the closing </${tagName}> tag.`);
       return;
     }
 
@@ -216,21 +216,189 @@ async function insertSlot(
 
     // Check if the slot is already present.
     if (new RegExp(`#${slotName}\\b`).test(innerContent)) {
-      void vscode.window.showInformationMessage(
-        `Slot #${slotName} is already used in <${tagName}>.`,
-      );
+      void vscode.window.showInformationMessage(`Slot #${slotName} is already used in <${tagName}>.`);
       return;
     }
 
     // Insert the new slot template just before the closing tag.
     const insertPos = document.positionAt(closingIdx);
-    const insertion =
-      `${slotIndent}<template #${slotName}>\n` +
-      `${slotIndent}</template>\n` +
-      `${indentation}`;
+    const insertion = `${slotIndent}<template #${slotName}>\n` + `${slotIndent}</template>\n` + `${indentation}`;
     edit.insert(document.uri, insertPos, insertion);
   }
 
+  await vscode.workspace.applyEdit(edit);
+}
+
+// =============================================================================
+// Prop insertion
+// =============================================================================
+
+async function insertProp(context: ComponentContext, propName: string): Promise<void> {
+  let document: vscode.TextDocument;
+  try {
+    document = await vscode.workspace.openTextDocument(context.documentUri);
+  } catch {
+    void vscode.window.showErrorMessage('Could not open the source file.');
+    return;
+  }
+
+  const text = document.getText();
+  const tagStart = context.tagOffset;
+  const tagName = context.tagName;
+
+  // Scan forward from the end of the tag name to find the closing `>` or `/>`
+  let i = tagStart + 1 + tagName.length;
+  let inString: string | null = null;
+  let insertBeforeIdx = -1;
+  let isSelfClosing = false;
+
+  while (i < text.length) {
+    const ch = text[i];
+    if (inString) {
+      if (ch === inString) inString = null;
+    } else if (ch === '"' || ch === "'") {
+      inString = ch;
+    } else if (ch === '/' && i + 1 < text.length && text[i + 1] === '>') {
+      insertBeforeIdx = i;
+      isSelfClosing = true;
+      break;
+    } else if (ch === '>') {
+      insertBeforeIdx = i;
+      break;
+    }
+    i++;
+  }
+
+  if (insertBeforeIdx === -1) {
+    void vscode.window.showWarningMessage(`Could not parse the opening tag of <${tagName}>.`);
+    return;
+  }
+
+  const attrName = toKebabCase(propName);
+  const openTagText = text.slice(tagStart, insertBeforeIdx + (isSelfClosing ? 2 : 1));
+
+  // Check if the prop is already present in the opening tag
+  if (new RegExp(`\\b:?${attrName}\\s*=|v-bind:${attrName}\\s*=`).test(openTagText)) {
+    void vscode.window.showInformationMessage(`Prop "${attrName}" is already set on <${tagName}>.`);
+    return;
+  }
+
+  // Insert `:attr-name=""` just before the closing `>` or `/>`.
+  // Respect the character preceding so we never double-space.
+  const charBefore = insertBeforeIdx > 0 ? text[insertBeforeIdx - 1] : '';
+  const prefix = charBefore === ' ' || charBefore === '\t' ? '' : ' ';
+  const attrStr = `:${attrName}=""`;
+
+  const edit = new vscode.WorkspaceEdit();
+  edit.insert(document.uri, document.positionAt(insertBeforeIdx), `${prefix}${attrStr}`);
+  await vscode.workspace.applyEdit(edit);
+}
+
+// =============================================================================
+// UI key insertion
+// =============================================================================
+
+async function insertUiKey(context: ComponentContext, keyName: string): Promise<void> {
+  let document: vscode.TextDocument;
+  try {
+    document = await vscode.workspace.openTextDocument(context.documentUri);
+  } catch {
+    void vscode.window.showErrorMessage('Could not open the source file.');
+    return;
+  }
+
+  const text = document.getText();
+  const tagStart = context.tagOffset;
+  const tagName = context.tagName;
+
+  // Find the extent of the opening tag (same tracking logic as insertProp)
+  let i = tagStart + 1 + tagName.length;
+  let inString: string | null = null;
+  let closeIdx = -1;
+  let selfClosing = false;
+
+  while (i < text.length) {
+    const ch = text[i];
+    if (inString) {
+      if (ch === inString) inString = null;
+    } else if (ch === '"' || ch === "'") {
+      inString = ch;
+    } else if (ch === '/' && i + 1 < text.length && text[i + 1] === '>') {
+      closeIdx = i;
+      selfClosing = true;
+      break;
+    } else if (ch === '>') {
+      closeIdx = i;
+      break;
+    }
+    i++;
+  }
+
+  if (closeIdx === -1) {
+    void vscode.window.showWarningMessage(`Could not parse the opening tag of <${tagName}>.`);
+    return;
+  }
+
+  // tagText covers everything from `<TagName` up to (not including) `>` or `/`
+  const tagText = text.slice(tagStart, closeIdx);
+
+  // Look for :ui= or v-bind:ui= attribute
+  const uiAttrMatch = /(?::ui|v-bind:ui)\s*=\s*(["'])/.exec(tagText);
+
+  if (!uiAttrMatch) {
+    // No :ui attribute yet — insert `:ui="{ keyName: '' }"`
+    const charBefore = closeIdx > 0 ? text[closeIdx - 1] : '';
+    const prefix = charBefore === ' ' || charBefore === '\t' ? '' : ' ';
+    const edit = new vscode.WorkspaceEdit();
+    edit.insert(document.uri, document.positionAt(closeIdx), `${prefix}:ui="{ ${keyName}: '' }"`);
+    await vscode.workspace.applyEdit(edit);
+    return;
+  }
+
+  // :ui= found — parse the attribute value
+  const quoteChar = uiAttrMatch[1];
+  // Absolute position in the document text right after the opening quote
+  const attrValueStart = tagStart + uiAttrMatch.index + uiAttrMatch[0].length;
+
+  // Find the matching closing quote. Vue template values can't contain the
+  // outer quote character unescaped, so a simple forward scan is correct.
+  let closingQuotePos = -1;
+  for (let j = attrValueStart; j < text.length; j++) {
+    if (text[j] === quoteChar) {
+      closingQuotePos = j;
+      break;
+    }
+  }
+
+  if (closingQuotePos === -1) {
+    void vscode.window.showWarningMessage(`Could not parse the :ui attribute value of <${tagName}>.`);
+    return;
+  }
+
+  const attrValue = text.slice(attrValueStart, closingQuotePos);
+
+  // Guard against duplicate key
+  if (new RegExp(`\\b${keyName}\\s*:`).test(attrValue)) {
+    void vscode.window.showInformationMessage(`UI key "${keyName}" is already set on <${tagName}>.`);
+    return;
+  }
+
+  // Find the closing `}` of the object to determine the insertion point
+  const lastBrace = attrValue.lastIndexOf('}');
+  if (lastBrace === -1) {
+    void vscode.window.showWarningMessage(`Could not locate the :ui object for <${tagName}>.`);
+    return;
+  }
+
+  // If the object already has content, prepend a comma
+  const innerContent = attrValue
+    .slice(0, lastBrace)
+    .replace(/^\s*\{/, '')
+    .trim();
+  const insertion = innerContent.length > 0 ? `, ${keyName}: ''` : `${keyName}: ''`;
+
+  const edit = new vscode.WorkspaceEdit();
+  edit.insert(document.uri, document.positionAt(attrValueStart + lastBrace), insertion);
   await vscode.workspace.applyEdit(edit);
 }
 
@@ -240,11 +408,7 @@ async function insertSlot(
  *
  * Handles nested same-name components by counting open/close pairs.
  */
-function findMatchingClose(
-  text: string,
-  tagName: string,
-  fromIndex: number,
-): number {
+function findMatchingClose(text: string, tagName: string, fromIndex: number): number {
   const openRe = new RegExp(`<${tagName}\\b`, 'g');
   const closeRe = new RegExp(`<\\/${tagName}>`, 'g');
 
@@ -276,10 +440,7 @@ function findMatchingClose(
   return -1;
 }
 
-function getLineIndentation(
-  document: vscode.TextDocument,
-  line: number,
-): string {
+function getLineIndentation(document: vscode.TextDocument, line: number): string {
   const lineText = document.lineAt(line).text;
   return lineText.match(/^(\s*)/)?.[1] ?? '';
 }
@@ -309,17 +470,16 @@ function renderHtml(
   url: string,
   context: ComponentContext | undefined,
   slots: string[],
+  props: string[],
+  uiKeys: string[],
 ): string {
   const origin = new URL(url).origin;
-  const csp = [
-    "default-src 'none'",
-    `frame-src ${origin}`,
-    "style-src 'unsafe-inline'",
-    "script-src 'unsafe-inline'",
-  ].join('; ');
+  const csp = ["default-src 'none'", `frame-src ${origin}`, "style-src 'unsafe-inline'", "script-src 'unsafe-inline'"].join('; ');
 
-  const hasSlots = context !== undefined && slots.length > 0;
-  const slotsSection = hasSlots ? renderSlotsSection(context!.tagName, slots) : '';
+  // Always show the props/slots sections when a component context is available.
+  const propsSection = context !== undefined ? renderPropsSection(context.tagName, props) : '';
+  const uiSection = context !== undefined ? renderUiSection(context.tagName, uiKeys) : '';
+  const slotsSection = context !== undefined ? renderSlotsSection(context.tagName, slots) : '';
 
   return /* html */ `<!DOCTYPE html>
 <html lang="en">
@@ -417,6 +577,12 @@ function renderHtml(
       border-color: var(--vscode-focusBorder, #007fd4);
     }
 
+    .slots-empty {
+      font-size: 12px;
+      opacity: 0.5;
+      font-style: italic;
+    }
+
     /* ---- Docs section ---- */
     .accordion.docs-accordion {
       flex: 1;
@@ -446,6 +612,8 @@ function renderHtml(
 </head>
 <body>
   <div class="layout">
+    ${propsSection}
+    ${uiSection}
     ${slotsSection}
     <div class="accordion docs-accordion is-open" id="docs-accordion">
       <div class="accordion-header" data-target="docs-accordion">
@@ -476,18 +644,33 @@ function renderHtml(
         vscode.postMessage({ command: 'insertSlot', slotName: btn.dataset.slot });
       });
     });
+
+    // Prop insertion
+    document.querySelectorAll('.prop-btn').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        vscode.postMessage({ command: 'insertProp', propName: btn.dataset.prop });
+      });
+    });
+
+    // UI key insertion
+    document.querySelectorAll('.ui-key-btn').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        vscode.postMessage({ command: 'insertUiKey', keyName: btn.dataset.uiKey });
+      });
+    });
   </script>
 </body>
 </html>`;
 }
 
 function renderSlotsSection(tagName: string, slots: string[]): string {
-  const buttons = slots
-    .map(
-      (slot) =>
-        `<button class="slot-btn" data-slot="${escapeAttr(slot)}">#${escapeHtml(slot)}</button>`,
-    )
-    .join('\n        ');
+  const body =
+    slots.length > 0
+      ? slots
+          .map((slot) => `<button class="slot-btn" data-slot="${escapeAttr(slot)}">#${escapeHtml(slot)}</button>`)
+          .join('\n        ')
+      : // No declaration file found or component has no named slots.
+        `<span class="slots-empty">No slots found for ${escapeHtml(tagName)}</span>`;
 
   return /* html */ `
     <div class="accordion is-open" id="slots-accordion">
@@ -496,22 +679,58 @@ function renderSlotsSection(tagName: string, slots: string[]): string {
         Slots — ${escapeHtml(tagName)}
       </div>
       <div class="accordion-body slots-body">
-        ${buttons}
+        ${body}
+      </div>
+    </div>`;
+}
+
+function renderPropsSection(tagName: string, props: string[]): string {
+  const body =
+    props.length > 0
+      ? props
+          .map((prop) => {
+            const attr = toKebabCase(prop);
+            return `<button class="prop-btn slot-btn" data-prop="${escapeAttr(prop)}">:${escapeHtml(attr)}</button>`;
+          })
+          .join('\n        ')
+      : `<span class="slots-empty">No props found for ${escapeHtml(tagName)}</span>`;
+
+  return /* html */ `
+    <div class="accordion is-open" id="props-accordion">
+      <div class="accordion-header" data-target="props-accordion">
+        <span class="chevron">▶</span>
+        Props — ${escapeHtml(tagName)}
+      </div>
+      <div class="accordion-body slots-body">
+        ${body}
+      </div>
+    </div>`;
+}
+
+function renderUiSection(tagName: string, uiKeys: string[]): string {
+  const body =
+    uiKeys.length > 0
+      ? uiKeys
+          .map((key) => `<button class="ui-key-btn slot-btn" data-ui-key="${escapeAttr(key)}">${escapeHtml(key)}</button>`)
+          .join('\n        ')
+      : `<span class="slots-empty">No ui keys found for ${escapeHtml(tagName)}</span>`;
+
+  return /* html */ `
+    <div class="accordion is-open" id="ui-accordion">
+      <div class="accordion-header" data-target="ui-accordion">
+        <span class="chevron">▶</span>
+        UI — ${escapeHtml(tagName)}
+      </div>
+      <div class="accordion-body slots-body">
+        ${body}
       </div>
     </div>`;
 }
 
 function escapeAttr(value: string): string {
-  return value
-    .replace(/&/g, '&amp;')
-    .replace(/"/g, '&quot;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
+  return value.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
 function escapeHtml(value: string): string {
-  return value
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
+  return value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
