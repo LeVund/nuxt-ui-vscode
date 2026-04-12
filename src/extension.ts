@@ -5,7 +5,8 @@ import { NuxtUiInlayHintsProvider } from './providers/inlayHints';
 import { NuxtUiHoverProvider } from './providers/hover';
 import { showComponentMenu } from './commands/componentMenu';
 import { pickAndOpenComponent } from './commands/openComponent';
-import { Commands } from './commandIds';
+import { Commands } from './commands/commandIds.enum';
+import { resolveDeclarationPath } from './slots';
 
 const VUE_SELECTOR: vscode.DocumentSelector = { language: 'vue', scheme: 'file' };
 
@@ -59,6 +60,23 @@ export function activate(context: vscode.ExtensionContext): void {
       if (typeof tagName === 'string' && tagName.length > 0) {
         panel.openComponent(tagName);
       }
+    }),
+    vscode.commands.registerCommand(Commands.OpenFromVSCode, async (tagName: string, docUriStr: string, tagOffset: number) => {
+      const uri = vscode.Uri.parse(docUriStr);
+      // tagOffset points to '<'; the tag name starts one character later.
+      const document = await vscode.workspace.openTextDocument(uri);
+      const namePosition = document.positionAt(tagOffset + 1);
+      const locations = await vscode.commands.executeCommand<vscode.LocationLink[]>(
+        'vscode.executeTypeDefinitionProvider',
+        uri,
+        namePosition,
+      );
+
+      console.log({ locations });
+
+      const declarationPath = locations?.[0] ? resolveDeclarationPath(locations[0].targetUri.fsPath) : undefined;
+      console.log(`[nuxtUiHelper] executeDefinitionProvider for <${tagName}>`, locations, '→', declarationPath);
+      panel.openComponent(tagName, { documentUri: uri, tagOffset, tagName, declarationPath });
     }),
   );
 }

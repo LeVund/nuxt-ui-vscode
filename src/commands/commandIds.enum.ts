@@ -1,6 +1,5 @@
 /**
  * All VS Code command identifiers contributed or consumed by this extension.
- * Using this enum avoids scattering raw strings across the codebase.
  */
 export enum Commands {
   /** Opens the extension home panel (command palette). */
@@ -11,4 +10,6 @@ export enum Commands {
   ShowComponentMenu = 'nuxtUiHelper.showComponentMenu',
   /** Opens a component doc panel by tag name (internal — not in palette). */
   OpenComponentByName = 'nuxtUi.openComponentByName',
+  /** Resolves the component declaration via VS Code's definition provider (inlay hint click). */
+  OpenFromVSCode = 'nuxtUiHelper.openFromVSCode',
 }

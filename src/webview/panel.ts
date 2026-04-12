@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import { VersionService } from '../version';
 import { tagToSlug, toKebabCase } from '../components';
-import { readComponentSlots, readComponentProps, readComponentUiKeys } from '../slots';
+import { readComponentInfo } from '../slots';
 
 /**
  * Contextual information about the source component tag that triggered the
@@ -14,6 +14,10 @@ export interface ComponentContext {
   tagOffset: number;
   /** Full tag name including the `U` prefix (e.g. `UCard`). */
   tagName: string;
+  /** Absolute path to the component's `.vue.d.ts` declaration file, resolved
+   *  via `vscode.executeDefinitionProvider`. When absent, slots/props/ui panels
+   *  are not shown. */
+  declarationPath?: string;
 }
 
 /**
@@ -51,6 +55,7 @@ export class DocPanel {
    * `tagName` must include the `U` prefix (e.g. `UButton`).
    */
   openComponent(tagName: string, context?: ComponentContext): void {
+    console.log('openComponent', { tagName, context });
     const slug = tagToSlug(tagName);
     if (!slug) {
       void vscode.window.showWarningMessage(`"${tagName}" is not a known Nuxt UI component.`);
@@ -113,13 +118,15 @@ export class DocPanel {
     }
     this.currentUrl = url;
 
-    // Read slots, props, and ui keys only when we have component context.
-    const componentName = context !== undefined ? context.tagName.slice(1) : '';
-    const slots = context !== undefined ? readComponentSlots(componentName) : [];
-    const props = context !== undefined ? readComponentProps(componentName) : [];
-    const uiKeys = context !== undefined ? readComponentUiKeys(componentName) : [];
-
-    this.panel.webview.html = renderHtml(url, context, slots, props, uiKeys);
+    const declPath = context?.declarationPath;
+    if (declPath) {
+      void readComponentInfo(declPath).then(({ slots, props, uiKeys }) => {
+        if (!this.panel) return;
+        this.panel.webview.html = renderHtml(url, context, slots, props, uiKeys);
+      });
+    } else {
+      this.panel.webview.html = renderHtml(url, context, [], [], []);
+    }
   }
 
   private async handleInsertSlot(slotName: string): Promise<void> {
