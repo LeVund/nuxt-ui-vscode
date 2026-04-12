@@ -6,7 +6,6 @@ import { NuxtUiHoverProvider } from './providers/hover';
 import { showComponentMenu } from './commands/componentMenu';
 import { pickAndOpenComponent } from './commands/openComponent';
 import { Commands } from './commands/commandIds.enum';
-import { resolveDeclarationPath } from './slots';
 
 const VUE_SELECTOR: vscode.DocumentSelector = { language: 'vue', scheme: 'file' };
 
@@ -36,7 +35,7 @@ export function activate(context: vscode.ExtensionContext): void {
   // Commands declared in package.json
   context.subscriptions.push(
     vscode.commands.registerCommand(Commands.OpenHome, () => {
-      panel.openHome();
+      // panel.openHome();
     }),
     vscode.commands.registerCommand(Commands.OpenComponent, async () => {
       await pickAndOpenComponent(panel);
@@ -44,17 +43,16 @@ export function activate(context: vscode.ExtensionContext): void {
     vscode.commands.registerCommand(
       Commands.ShowComponentMenu,
       async (tagName: string, docUriStr?: string, tagOffset?: number) => {
-        const context =
+        const ctx =
           typeof docUriStr === 'string' && typeof tagOffset === 'number'
             ? { documentUri: vscode.Uri.parse(docUriStr), tagOffset, tagName }
             : undefined;
-        await showComponentMenu(tagName, panel, context);
+        await showComponentMenu(tagName, panel, ctx);
       },
     ),
   );
 
-  // Internal command used by the hover markdown links. Not declared in
-  // package.json because it should not appear in the command palette.
+  // Internal commands — not declared in package.json.
   context.subscriptions.push(
     vscode.commands.registerCommand(Commands.OpenComponentByName, (tagName: string) => {
       if (typeof tagName === 'string' && tagName.length > 0) {
@@ -62,21 +60,28 @@ export function activate(context: vscode.ExtensionContext): void {
       }
     }),
     vscode.commands.registerCommand(Commands.OpenFromVSCode, async (tagName: string, docUriStr: string, tagOffset: number) => {
-      const uri = vscode.Uri.parse(docUriStr);
-      // tagOffset points to '<'; the tag name starts one character later.
-      const document = await vscode.workspace.openTextDocument(uri);
-      const namePosition = document.positionAt(tagOffset + 1);
-      const locations = await vscode.commands.executeCommand<vscode.LocationLink[]>(
-        'vscode.executeTypeDefinitionProvider',
-        uri,
-        namePosition,
-      );
+      // TEST
+      // const uri = vscode.Uri.parse(docUriStr);
+      // // tagOffset points to '<'; the tag name starts one character later.
+      // const document = await vscode.workspace.openTextDocument(uri);
+      // const namePosition = document.positionAt(tagOffset + 1);
+      // const locations = await vscode.commands.executeCommand<vscode.LocationLink[]>(
+      //   'vscode.executeDefinitionProvider',
+      //   uri,
+      //   namePosition,
+      // );
 
-      console.log({ locations });
+      // console.log('--------------');
+      // console.log('--------------');
+      // console.log('--------------');
+      // console.log({ locations });
+      // console.log('--------------');
+      // console.log('--------------');
+      // console.log('--------------');
 
-      const declarationPath = locations?.[0] ? resolveDeclarationPath(locations[0].targetUri.fsPath) : undefined;
-      console.log(`[nuxtUiHelper] executeDefinitionProvider for <${tagName}>`, locations, '→', declarationPath);
-      panel.openComponent(tagName, { documentUri: uri, tagOffset, tagName, declarationPath });
+      // END TEST
+      const ctx = { documentUri: vscode.Uri.parse(docUriStr), tagOffset, tagName };
+      await panel.openComponent(tagName, ctx);
     }),
   );
 }

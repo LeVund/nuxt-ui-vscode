@@ -24,5 +24,5 @@ export async function showComponentMenu(tagName: string, panel: DocPanel, contex
     // Future items go here.
   ];
 
-  panel.openComponent(tagName, context);
+  void panel.openComponent(tagName, context);
 }

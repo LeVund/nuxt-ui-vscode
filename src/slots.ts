@@ -14,7 +14,7 @@ export interface ComponentInfo {
  * Returns `undefined` when the input path cannot be mapped to a `.vue.d.ts`.
  */
 export function resolveDeclarationPath(definitionFsPath: string): string | undefined {
-  if (definitionFsPath.endsWith('.vue.d.ts')) {
+  if (definitionFsPath.endsWith('.d.vue.ts')) {
     return definitionFsPath;
   }
   if (definitionFsPath.endsWith('.vue')) {
@@ -37,15 +37,16 @@ export async function readComponentInfo(declarationFilePath: string): Promise<Co
 
   try {
     await vscode.workspace.openTextDocument(uri);
-  } catch {
+  } catch (err) {
     return { slots: [], props: [], uiKeys: [] };
   }
 
-  const symbols =
-    (await vscode.commands.executeCommand<vscode.DocumentSymbol[]>(
-      'vscode.executeDocumentSymbolProvider',
-      uri,
-    )) ?? [];
+  let symbols: vscode.DocumentSymbol[];
+  try {
+    symbols = (await vscode.commands.executeCommand<vscode.DocumentSymbol[]>('vscode.executeDocumentSymbolProvider', uri)) ?? [];
+  } catch (err) {
+    return { slots: [], props: [], uiKeys: [] };
+  }
 
   const propsSymbol = symbols.find((s) => s.name.endsWith('Props'));
   const slotsSymbol = symbols.find((s) => s.name.endsWith('Slots'));
@@ -53,9 +54,6 @@ export async function readComponentInfo(declarationFilePath: string): Promise<Co
   const slots = slotsSymbol?.children.map((c) => c.name) ?? [];
   const props = propsSymbol?.children.map((c) => c.name) ?? [];
 
-  // The `ui` prop has an inline object type — the symbol provider only gives us
-  // its name. We use the hover provider on its position to get the full type
-  // signature, then extract the key names from it.
   let uiKeys: string[] = [];
   const uiProp = propsSymbol?.children.find((c) => c.name === 'ui');
   if (uiProp) {
@@ -77,12 +75,7 @@ export async function readComponentInfo(declarationFilePath: string): Promise<Co
  * We extract the first `{ … }` block and collect every `key?:` / `key:` entry.
  */
 async function resolveUiKeys(uri: vscode.Uri, position: vscode.Position): Promise<string[]> {
-  const hovers =
-    (await vscode.commands.executeCommand<vscode.Hover[]>(
-      'vscode.executeHoverProvider',
-      uri,
-      position,
-    )) ?? [];
+  const hovers = (await vscode.commands.executeCommand<vscode.Hover[]>('vscode.executeHoverProvider', uri, position)) ?? [];
 
   const text = hovers
     .flatMap((h) => h.contents)
