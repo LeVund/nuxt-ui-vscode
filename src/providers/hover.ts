@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import { findComponentAt } from '../scanner';
+import { Commands } from '../commandIds';
 
 /**
  * Shows a hover tooltip with quick action links on Nuxt UI component
@@ -29,11 +30,11 @@ export class NuxtUiHoverProvider implements vscode.HoverProvider {
     md.supportHtml = false;
     md.appendMarkdown(`**${match.tagName}** — Nuxt UI component\n\n`);
     md.appendMarkdown(
-      `[$(book) Open documentation](command:nuxtUi.openComponentByName?${args})`,
+      `[$(book) Open documentation](command:${Commands.OpenComponentByName}?${args})`,
     );
     md.appendMarkdown('  \u00A0·\u00A0  ');
     md.appendMarkdown(
-      `[$(list-unordered) More actions…](command:nuxtUi.showComponentMenu?${args})`,
+      `[$(list-unordered) More actions…](command:${Commands.ShowComponentMenu}?${args})`,
     );
 
     return new vscode.Hover(md, match.range);

@@ -10,11 +10,7 @@ interface ActionItem extends vscode.QuickPickItem {
  * When `context` is provided (tag URI + offset), the panel will also show
  * the slot-insertion panel for the component.
  */
-export async function showComponentMenu(
-  tagName: string,
-  panel: DocPanel,
-  context?: ComponentContext,
-): Promise<void> {
+export async function showComponentMenu(tagName: string, panel: DocPanel, context?: ComponentContext): Promise<void> {
   if (!tagName) {
     return;
   }
@@ -28,17 +24,5 @@ export async function showComponentMenu(
     // Future items go here.
   ];
 
-  const picked = await vscode.window.showQuickPick(items, {
-    placeHolder: `Nuxt UI — ${tagName}`,
-    matchOnDescription: true,
-  });
-  if (!picked) {
-    return;
-  }
-
-  switch (picked.action) {
-    case 'openDocs':
-      panel.openComponent(tagName, context);
-      return;
-  }
+  panel.openComponent(tagName, context);
 }

@@ -5,6 +5,7 @@ import { NuxtUiInlayHintsProvider } from './providers/inlayHints';
 import { NuxtUiHoverProvider } from './providers/hover';
 import { showComponentMenu } from './commands/componentMenu';
 import { pickAndOpenComponent } from './commands/openComponent';
+import { Commands } from './commandIds';
 
 const VUE_SELECTOR: vscode.DocumentSelector = { language: 'vue', scheme: 'file' };
 
@@ -33,14 +34,14 @@ export function activate(context: vscode.ExtensionContext): void {
 
   // Commands declared in package.json
   context.subscriptions.push(
-    vscode.commands.registerCommand('nuxtUi.openHome', () => {
+    vscode.commands.registerCommand(Commands.OpenHome, () => {
       panel.openHome();
     }),
-    vscode.commands.registerCommand('nuxtUi.openComponent', async () => {
+    vscode.commands.registerCommand(Commands.OpenComponent, async () => {
       await pickAndOpenComponent(panel);
     }),
     vscode.commands.registerCommand(
-      'nuxtUi.showComponentMenu',
+      Commands.ShowComponentMenu,
       async (tagName: string, docUriStr?: string, tagOffset?: number) => {
         const context =
           typeof docUriStr === 'string' && typeof tagOffset === 'number'
@@ -54,14 +55,11 @@ export function activate(context: vscode.ExtensionContext): void {
   // Internal command used by the hover markdown links. Not declared in
   // package.json because it should not appear in the command palette.
   context.subscriptions.push(
-    vscode.commands.registerCommand(
-      'nuxtUi.openComponentByName',
-      (tagName: string) => {
-        if (typeof tagName === 'string' && tagName.length > 0) {
-          panel.openComponent(tagName);
-        }
-      },
-    ),
+    vscode.commands.registerCommand(Commands.OpenComponentByName, (tagName: string) => {
+      if (typeof tagName === 'string' && tagName.length > 0) {
+        panel.openComponent(tagName);
+      }
+    }),
   );
 }
 

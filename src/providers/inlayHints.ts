@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import { scanComponents } from '../scanner';
+import { Commands } from '../commandIds';
 
 /**
  * Shows a clickable `⚡` inlay hint immediately before the `<` of every
@@ -33,7 +34,7 @@ export class NuxtUiInlayHintsProvider implements vscode.InlayHintsProvider {
         `**${match.tagName}** — click for Nuxt UI actions`,
       );
       labelPart.command = {
-        command: 'nuxtUi.showComponentMenu',
+        command: Commands.ShowComponentMenu,
         title: 'Nuxt UI actions',
         arguments: [
           match.tagName,
