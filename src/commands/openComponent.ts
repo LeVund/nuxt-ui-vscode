@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import { NUXT_UI_TAG_NAMES } from '../core/components';
-import { DocPanel } from '../webview/panel';
+import { DocPanel } from '../webview/DocPanel';
 
 /**
  * Shows a QuickPick listing every known Nuxt UI component. Used by the

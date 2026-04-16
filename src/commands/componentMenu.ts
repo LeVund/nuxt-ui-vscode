@@ -1,4 +1,5 @@
-import { DocPanel, ComponentContext } from '../webview/panel';
+import { ComponentContext } from '../core/types';
+import { DocPanel } from '../webview/DocPanel';
 
 /**
  * Opens a QuickPick listing the actions available for a given component.
