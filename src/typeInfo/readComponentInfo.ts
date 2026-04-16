@@ -2,6 +2,20 @@ import * as vscode from 'vscode';
 import type { ComponentInfo } from '../core/types';
 import { resolveUiKeys } from './resolveUiKeys';
 
+async function loadDocumentSymbols(uri: vscode.Uri): Promise<vscode.DocumentSymbol[]> {
+  try {
+    await vscode.workspace.openTextDocument(uri);
+  } catch {
+    return [];
+  }
+
+  try {
+    return (await vscode.commands.executeCommand<vscode.DocumentSymbol[]>('vscode.executeDocumentSymbolProvider', uri)) ?? [];
+  } catch {
+    return [];
+  }
+}
+
 /**
  * Reads slots, props, and ui keys from a `.vue.d.ts` file using the VSCode
  * document symbol provider, which delegates to the active TypeScript / Volar
@@ -13,19 +27,9 @@ import { resolveUiKeys } from './resolveUiKeys';
  */
 export async function readComponentInfo(declarationFilePath: string): Promise<ComponentInfo> {
   const uri = vscode.Uri.file(declarationFilePath);
+  const symbols = await loadDocumentSymbols(uri);
 
-  try {
-    await vscode.workspace.openTextDocument(uri);
-  } catch (err) {
-    return { slots: [], props: [], uiKeys: [] };
-  }
-
-  let symbols: vscode.DocumentSymbol[];
-  try {
-    symbols = (await vscode.commands.executeCommand<vscode.DocumentSymbol[]>('vscode.executeDocumentSymbolProvider', uri)) ?? [];
-  } catch (err) {
-    return { slots: [], props: [], uiKeys: [] };
-  }
+  if (symbols.length === 0) return { slots: [], props: [], uiKeys: [] };
 
   const propsSymbol = symbols.find((s) => s.name.endsWith('Props'));
   const slotsSymbol = symbols.find((s) => s.name.endsWith('Slots'));
