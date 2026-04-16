@@ -21,18 +21,28 @@ export class DocPanel {
   }
 
   async openComponent(tagName: string, context?: ComponentContext): Promise<void> {
+    if (!context) {
+      void vscode.window.showWarningMessage(`No file context provided while fetching for "${tagName}".`);
+      void vscode.window.showWarningMessage(
+        `The feature to get component information without file context is not implemented yet.`,
+      );
+      return;
+    }
+
     this.currentContext = context;
     const slug = tagToSlug(tagName);
+
     if (!slug) {
       void vscode.window.showWarningMessage(`"${tagName}" is not a known Nuxt UI component.`);
       return;
     }
-    const url = `${this.version.current.baseUrl}${componentPath(this.version.current.version, slug)}`;
-    const info = context ? await resolveComponentInfo(context) : { slots: [], props: [], uiKeys: [] };
+
+    const nuxtUiWebSiteUrl = `${this.version.current.baseUrl}${componentPath(this.version.current.version, slug)}`;
+    const interactiveProperties = context ? await resolveComponentInfo(context) : { slots: [], props: [], uiKeys: [] };
     const title = context ? `Nuxt UI — ${tagName}` : 'Nuxt UI — Component';
 
     if (!this.panel) this.initPanel(title);
-    this.updatePanel(title, url, info);
+    this.updatePanel(title, nuxtUiWebSiteUrl, interactiveProperties);
   }
 
   // -------------------------------------------------------------------------
@@ -69,14 +79,14 @@ export class DocPanel {
     }
   }
 
-  private updatePanel(title: string, url: string, info: ComponentInfo): void {
+  private updatePanel(title: string, nuxtUiWebSiteUrl: string, { slots, props, uiKeys }: ComponentInfo): void {
     if (!this.panel || !this.currentContext) return;
     const { tagName } = this.currentContext!;
 
     this.panel.title = title;
     this.panel.reveal(this.panel.viewColumn ?? vscode.ViewColumn.Beside);
 
-    this.currentUrl = url;
-    this.panel.webview.html = renderHtml(url, tagName, info.slots, info.props, info.uiKeys);
+    this.currentUrl = nuxtUiWebSiteUrl;
+    this.panel.webview.html = renderHtml(nuxtUiWebSiteUrl, tagName, slots, props, uiKeys);
   }
 }
