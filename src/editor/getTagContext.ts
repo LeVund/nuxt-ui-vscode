@@ -8,6 +8,7 @@ export async function getTagContext({
   tagName,
 }: ComponentTagFileContext): Promise<{ document: vscode.TextDocument; text: string; tag: ParsedTag } | undefined> {
   let document: vscode.TextDocument;
+
   try {
     document = await vscode.workspace.openTextDocument(documentUri);
   } catch {

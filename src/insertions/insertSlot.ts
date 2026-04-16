@@ -13,9 +13,11 @@ function buildSelfClosingSlotEdit(
   slotIndent: string,
 ): vscode.WorkspaceEdit {
   const edit = new vscode.WorkspaceEdit();
+
   const slashGtPos = document.positionAt(tag.openTagEnd - 2);
   const afterGtPos = document.positionAt(tag.openTagEnd);
   const replacement = `>\n${slotIndent}<template #${slotName}>\n${slotIndent}</template>\n${indentation}</${tagName}>`;
+
   edit.replace(document.uri, new vscode.Range(slashGtPos, afterGtPos), replacement);
   return edit;
 }
@@ -48,8 +50,9 @@ function buildPairedSlotEdit(
   return edit;
 }
 
-export async function insertSlot({ tagOffset, tagName, ...ctx }: ComponentTagFileContext, slotName: string): Promise<void> {
-  const parsed = await getTagContext({ tagOffset, tagName, ...ctx });
+export async function insertSlot(componentTagFileContext: ComponentTagFileContext, slotName: string): Promise<void> {
+  const { tagOffset, tagName } = componentTagFileContext;
+  const parsed = await getTagContext(componentTagFileContext);
   if (!parsed) return;
 
   const { document, text, tag } = parsed;
