@@ -25,10 +25,10 @@ export function registerCommands(context: vscode.ExtensionContext, panel: DocPan
 
   // Internal commands — not declared in package.json.
   context.subscriptions.push(
-    vscode.commands.registerCommand(Commands.OpenComponentByName, (_tagName: string) => {
-      // TODO: Require integration of openComponentWithouContext
-      // panel.openComponent(tagName);
-    }),
+    // vscode.commands.registerCommand(Commands.OpenComponentByName, (_tagName: string) => {
+    // TODO: Require integration of openComponentWithouContext
+    // panel.openComponent(tagName);
+    // }),
     vscode.commands.registerCommand(Commands.OpenFromVSCode, async (tagName: string, docUriStr: string, tagOffset: number) => {
       const ctx = { documentUri: vscode.Uri.parse(docUriStr), tagOffset, tagName };
       await panel.openComponent(ctx);
