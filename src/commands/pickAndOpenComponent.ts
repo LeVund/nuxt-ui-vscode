@@ -1,0 +1,1 @@
+export { pickAndOpenComponent } from './openComponent';
