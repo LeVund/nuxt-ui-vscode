@@ -18,9 +18,10 @@ export function toKebabCase(componentName: string): string {
  * Converts a full tag name (e.g. `UButton`) to its kebab-case slug
  * (e.g. `button`). Returns `undefined` for non-Nuxt UI tags.
  */
-export function tagToSlug(tagName: string): string | undefined {
+export function tagToSlug(tagName: string): string {
   if (!isNuxtUiTag(tagName)) {
-    return undefined;
+    throw new Error(`Invalid Nuxt UI tag name: ${tagName}`);
   }
+
   return toKebabCase(tagName.slice(1));
 }

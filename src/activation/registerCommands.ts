@@ -9,7 +9,7 @@ export function registerCommands(context: vscode.ExtensionContext, panel: DocPan
   context.subscriptions.push(
     vscode.commands.registerCommand(Commands.OpenHome, () => {}),
     vscode.commands.registerCommand(Commands.OpenComponent, async () => {
-      await pickAndOpenComponent(panel);
+      await pickAndOpenComponent();
     }),
     vscode.commands.registerCommand(
       Commands.ShowComponentMenu,
@@ -25,14 +25,13 @@ export function registerCommands(context: vscode.ExtensionContext, panel: DocPan
 
   // Internal commands — not declared in package.json.
   context.subscriptions.push(
-    vscode.commands.registerCommand(Commands.OpenComponentByName, (tagName: string) => {
-      if (typeof tagName === 'string' && tagName.length > 0) {
-        panel.openComponent(tagName);
-      }
+    vscode.commands.registerCommand(Commands.OpenComponentByName, (_tagName: string) => {
+      // TODO: Require integration of openComponentWithouContext
+      // panel.openComponent(tagName);
     }),
     vscode.commands.registerCommand(Commands.OpenFromVSCode, async (tagName: string, docUriStr: string, tagOffset: number) => {
       const ctx = { documentUri: vscode.Uri.parse(docUriStr), tagOffset, tagName };
-      await panel.openComponent(tagName, ctx);
+      await panel.openComponent(ctx);
     }),
   );
 }

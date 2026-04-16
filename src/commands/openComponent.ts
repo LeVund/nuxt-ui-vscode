@@ -1,7 +1,5 @@
 import * as vscode from 'vscode';
 import { NUXT_UI_TAG_NAMES } from '../core/components';
-import { DocPanel } from '../webview/DocPanel';
-
 /**
  * Shows a QuickPick listing every known Nuxt UI component. Used by the
  * `nuxtUi.openComponent` command exposed in the command palette.
@@ -9,7 +7,7 @@ import { DocPanel } from '../webview/DocPanel';
  * The user can type a tag name (e.g. `UButton`) and VS Code's built-in
  * fuzzy matcher will narrow the list.
  */
-export async function pickAndOpenComponent(panel: DocPanel): Promise<void> {
+export async function pickAndOpenComponent(): Promise<void> {
   const items: vscode.QuickPickItem[] = NUXT_UI_TAG_NAMES.map((tag) => ({
     label: tag,
   }));
@@ -21,5 +19,6 @@ export async function pickAndOpenComponent(panel: DocPanel): Promise<void> {
   if (!picked) {
     return;
   }
-  panel.openComponent(picked.label);
+  // TODO: Require integration of openComponentWithouContext
+  // panel.openComponent(picked.label);
 }

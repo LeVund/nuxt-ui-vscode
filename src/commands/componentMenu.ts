@@ -11,5 +11,8 @@ export async function showComponentMenu(tagName: string, panel: DocPanel, contex
     return;
   }
 
-  void panel.openComponent(tagName, context);
+  if (context) {
+    void panel.openComponent(context);
+  }
+  // else: TODO: Require integration of openComponentWithouContext
 }

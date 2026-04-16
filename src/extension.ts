@@ -4,14 +4,14 @@ import { DocPanel } from './webview/DocPanel';
 import { registerProviders } from './activation/registerProviders';
 import { registerCommands } from './activation/registerCommands';
 
-export function activate(context: vscode.ExtensionContext): void {
+export function activate(extensionContext: vscode.ExtensionContext): void {
   const version = new VersionService();
-  context.subscriptions.push(version);
+  extensionContext.subscriptions.push(version);
 
   const panel = new DocPanel(version);
 
-  registerProviders(context);
-  registerCommands(context, panel);
+  registerProviders(extensionContext);
+  registerCommands(extensionContext, panel);
 }
 
 export function deactivate(): void {

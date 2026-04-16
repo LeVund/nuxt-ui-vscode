@@ -13,77 +13,78 @@ export class DocPanel {
   private static readonly VIEW_TYPE = 'nuxtUi.docs';
   private panel: vscode.WebviewPanel | undefined;
   private currentUrl: string | undefined;
-  private currentContext: ComponentTagFileContext | undefined;
+  private _currentContext: ComponentTagFileContext | undefined;
   private version: VersionService;
 
+  private get currentContext(): ComponentTagFileContext {
+    if (!this._currentContext) {
+      throw new Error('No current context set for DocPanel.');
+    }
+    return this._currentContext;
+  }
+  private get title() {
+    return `Nuxt UI — ${this.currentContext.tagName}`;
+  }
   constructor(version: VersionService) {
     this.version = version;
   }
 
-  async openComponent(tagName: string, context?: ComponentTagFileContext): Promise<void> {
-    if (!context) {
-      void vscode.window.showWarningMessage(`No file context provided while fetching for "${tagName}".`);
-      void vscode.window.showWarningMessage(
-        `The feature to get component information without file context is not implemented yet.`,
-      );
-      return;
-    }
+  async openComponent(context: ComponentTagFileContext): Promise<void> {
+    this._currentContext = context;
 
-    this.currentContext = context;
-    const slug = tagToSlug(tagName);
-
-    if (!slug) {
-      void vscode.window.showWarningMessage(`"${tagName}" is not a known Nuxt UI component.`);
-      return;
-    }
-
-    const nuxtUiWebSiteUrl = `${this.version.current.baseUrl}${componentPath(this.version.current.version, slug)}`;
-    const interactiveProperties = await resolveComponentInfo(context);
-    const title = `Nuxt UI — ${tagName}`;
-
-    if (!this.panel) this.initPanel(title);
-    this.updatePanel(title, nuxtUiWebSiteUrl, interactiveProperties);
+    if (!this.panel) this.initPanel();
+    this.updatePanel();
   }
 
   // -------------------------------------------------------------------------
   // Private helpers
   // -------------------------------------------------------------------------
 
-  private initPanel(title: string): void {
+  private initPanel(): void {
     if (!this.panel) {
+      const title = `Nuxt UI — ${this.currentContext.tagName}`;
+
       this.panel = vscode.window.createWebviewPanel(DocPanel.VIEW_TYPE, title, vscode.ViewColumn.Beside, {
         enableScripts: true,
         retainContextWhenHidden: true,
       });
 
-      this.panel.webview.onDidReceiveMessage(async (msg: unknown) => {
-        if (!msg || typeof msg !== 'object') return;
-        const m = msg as Record<string, unknown>;
+      // Handle insert commands sent from the webview (slot, prop, ui key)
+      this.panel.webview.onDidReceiveMessage(
+        async (message: { command: string; slotName: string; propName: string; keyName: string }) => {
+          if (!message || typeof message !== 'object') return;
 
-        if (!this.currentContext) return;
+          if (!this.currentContext) return;
 
-        if (m.command === 'insertSlot' && typeof m.slotName === 'string') {
-          await insertSlot(this.currentContext, m.slotName);
-        } else if (m.command === 'insertProp' && typeof m.propName === 'string') {
-          await insertProp(this.currentContext, m.propName);
-        } else if (m.command === 'insertUiKey' && typeof m.keyName === 'string') {
-          await insertUiKey(this.currentContext, m.keyName);
-        }
-      });
+          if (message.command === 'insertSlot' && typeof message.slotName === 'string') {
+            await insertSlot(this.currentContext, message.slotName);
+          } else if (message.command === 'insertProp' && typeof message.propName === 'string') {
+            await insertProp(this.currentContext, message.propName);
+          } else if (message.command === 'insertUiKey' && typeof message.keyName === 'string') {
+            await insertUiKey(this.currentContext, message.keyName);
+          }
+        },
+      );
 
       this.panel.onDidDispose(() => {
         this.panel = undefined;
         this.currentUrl = undefined;
-        this.currentContext = undefined;
+        this._currentContext = undefined;
       });
     }
   }
 
-  private updatePanel(title: string, nuxtUiWebSiteUrl: string, { slots, props, uiKeys }: ComponentInfo): void {
-    if (!this.panel || !this.currentContext) return;
+  private async updatePanel(): Promise<void> {
+    if (!this.panel) {
+      throw new Error('Panel not initialized');
+    }
+
+    const nuxtUiWebSiteUrl = `${this.version.current.baseUrl}${componentPath(this.version.current.version, tagToSlug(this.currentContext.tagName))}`;
+    const { slots, props, uiKeys } = await resolveComponentInfo(this.currentContext);
+
     const { tagName } = this.currentContext!;
 
-    this.panel.title = title;
+    this.panel.title = this.title;
     this.panel.reveal(this.panel.viewColumn ?? vscode.ViewColumn.Beside);
 
     this.currentUrl = nuxtUiWebSiteUrl;
