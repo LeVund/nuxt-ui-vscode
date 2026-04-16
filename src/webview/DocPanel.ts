@@ -67,7 +67,6 @@ export class DocPanel {
 
       this.panel.onDidDispose(() => {
         this.panel = undefined;
-        this.currentUrl = undefined;
         this._currentContext = undefined;
       });
     }
