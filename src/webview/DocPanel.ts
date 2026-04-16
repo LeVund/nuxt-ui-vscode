@@ -85,7 +85,6 @@ export class DocPanel {
     this.panel.title = this.title;
     this.panel.reveal(this.panel.viewColumn ?? vscode.ViewColumn.Beside);
 
-    this.currentUrl = nuxtUiWebSiteUrl;
     this.panel.webview.html = renderHtml(nuxtUiWebSiteUrl, tagName, slots, props, uiKeys);
   }
 }
