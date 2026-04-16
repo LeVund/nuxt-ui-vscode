@@ -1,17 +1,8 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
+import type { NuxtUiVersion, VersionInfo } from './core/types';
 
-export type NuxtUiVersion = 'v3' | 'v4';
-
-export interface VersionInfo {
-  version: NuxtUiVersion;
-  /** Base URL for documentation (no trailing slash). */
-  baseUrl: string;
-  /** Raw semver string detected from package.json, if any. */
-  raw?: string;
-  /** True when resolution fell back to the default version. */
-  fallback: boolean;
-}
+export type { NuxtUiVersion, VersionInfo };
 
 const V4_BASE = 'https://ui.nuxt.com';
 const V3_BASE = 'https://ui3.nuxt.com';

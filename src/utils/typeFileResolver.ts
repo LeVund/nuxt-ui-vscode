@@ -1,10 +1,7 @@
 import * as vscode from 'vscode';
+import type { ComponentInfo } from '../core/types';
 
-export interface ComponentInfo {
-  slots: string[];
-  props: string[];
-  uiKeys: string[];
-}
+export type { ComponentInfo };
 
 /**
  * Resolves the `.vue.d.ts` declaration file path from a path returned by

@@ -1,18 +1,12 @@
 import * as vscode from 'vscode';
 import type { ComponentContext } from '../webview/panel';
+import type { ParsedTag } from '../core/types';
+
+export type { ParsedTag };
 
 // =============================================================================
 // Tag parsing helpers
 // =============================================================================
-
-export interface ParsedTag {
-  /** Index right after the closing `>` or `/>` */
-  openTagEnd: number;
-  /** Whether the tag is self-closing (`/>`) */
-  selfClosing: boolean;
-  /** Index of the `>` (or `/` for `/>`) */
-  closeCharIdx: number;
-}
 
 export function getParsedTag(text: string, tagStart: number, tagName: string): ParsedTag | undefined {
   let i = tagStart + 1 + tagName.length;

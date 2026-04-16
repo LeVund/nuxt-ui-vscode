@@ -4,12 +4,9 @@ import { tagToSlug } from '../utils/syntaxUtils';
 import { readComponentInfo, resolveDeclarationPath } from '../utils/typeFileResolver';
 import { renderHtml, componentPath } from './html';
 import { insertSlot, insertProp, insertUiKey } from '../editor-actions/InsertInComponents';
+import type { ComponentContext } from '../core/types';
 
-export interface ComponentContext {
-  documentUri: vscode.Uri;
-  tagOffset: number;
-  tagName: string;
-}
+export type { ComponentContext };
 
 export class DocPanel {
   private static readonly VIEW_TYPE = 'nuxtUi.docs';
