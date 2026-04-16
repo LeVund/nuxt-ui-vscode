@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
-import { findComponentAt } from '../scanner';
+import { findComponentAt } from '../editor/findComponentAt';
+import { Commands } from '../commands/commandIds.enum';
 
 /**
  * Shows a hover tooltip with quick action links on Nuxt UI component
@@ -7,13 +8,8 @@ import { findComponentAt } from '../scanner';
  * users two discoverable entry points.
  */
 export class NuxtUiHoverProvider implements vscode.HoverProvider {
-  provideHover(
-    document: vscode.TextDocument,
-    position: vscode.Position,
-  ): vscode.Hover | undefined {
-    const enabled = vscode.workspace
-      .getConfiguration('nuxtUi')
-      .get<boolean>('hover.enabled', true);
+  provideHover(document: vscode.TextDocument, position: vscode.Position): vscode.Hover | undefined {
+    const enabled = vscode.workspace.getConfiguration('nuxtUi').get<boolean>('hover.enabled', true);
     if (!enabled) {
       return undefined;
     }
@@ -28,13 +24,9 @@ export class NuxtUiHoverProvider implements vscode.HoverProvider {
     md.isTrusted = true;
     md.supportHtml = false;
     md.appendMarkdown(`**${match.tagName}** — Nuxt UI component\n\n`);
-    md.appendMarkdown(
-      `[$(book) Open documentation](command:nuxtUi.openComponentByName?${args})`,
-    );
+    md.appendMarkdown(`[$(book) Open documentation](command:${Commands.OpenComponentByName}?${args})`);
     md.appendMarkdown('  \u00A0·\u00A0  ');
-    md.appendMarkdown(
-      `[$(list-unordered) More actions…](command:nuxtUi.showComponentMenu?${args})`,
-    );
+    md.appendMarkdown(`[$(list-unordered) More actions…](command:${Commands.ShowComponentMenu}?${args})`);
 
     return new vscode.Hover(md, match.range);
   }

@@ -1,6 +1,6 @@
 {
   "name": "nuxt-ui-vscode",
-  "displayName": "Nuxt UI",
+  "displayName": "Nuxt UI helper",
   "description": "Nuxt UI documentation and helpers inside VS Code",
   "version": "0.0.1",
   "publisher": "leVund",
@@ -23,28 +23,32 @@
   "contributes": {
     "commands": [
       {
-        "command": "nuxtUi.openHome",
-        "title": "Nuxt UI: Open Documentation Home"
+        "command": "nuxtUiHelper.openHome",
+        "title": "Nuxt UI helper: Open Documentation Home"
       },
       {
-        "command": "nuxtUi.openComponent",
-        "title": "Nuxt UI: Open Component Docs..."
+        "command": "nuxtUiHelper.openComponent",
+        "title": "Nuxt UI helper: Open Component Docs..."
       },
       {
-        "command": "nuxtUi.showComponentMenu",
-        "title": "Nuxt UI: Show Component Actions"
+        "command": "nuxtUiHelper.showComponentMenu",
+        "title": "Nuxt UI helper: Show Component Actions"
+      },
+      {
+        "command": "nuxtUiHelper.openComponentWithoutContext",
+        "title": "Nuxt UI helper: Open Component without Context (for testing)"
       }
     ],
     "menus": {
       "commandPalette": [
         {
-          "command": "nuxtUi.showComponentMenu",
+          "command": "nuxtUiHelper.showComponentMenu",
           "when": "false"
         }
       ]
     },
     "configuration": {
-      "title": "Nuxt UI",
+      "title": "Nuxt UI helper",
       "properties": {
         "nuxtUi.version": {
           "type": "string",

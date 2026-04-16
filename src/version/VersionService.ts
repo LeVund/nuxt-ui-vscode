@@ -1,17 +1,6 @@
 import * as vscode from 'vscode';
-import * as path from 'path';
-
-export type NuxtUiVersion = 'v3' | 'v4';
-
-export interface VersionInfo {
-  version: NuxtUiVersion;
-  /** Base URL for documentation (no trailing slash). */
-  baseUrl: string;
-  /** Raw semver string detected from package.json, if any. */
-  raw?: string;
-  /** True when resolution fell back to the default version. */
-  fallback: boolean;
-}
+import type { VersionInfo } from '../core/types';
+import { detectFromPackageJson } from './detectFromPackageJson';
 
 const V4_BASE = 'https://ui.nuxt.com';
 const V3_BASE = 'https://ui3.nuxt.com';
@@ -90,47 +79,11 @@ export class VersionService implements vscode.Disposable {
     }
 
     // auto: read @nuxt/ui from workspace package.json
-    const detected = await this.detectFromPackageJson();
+    const detected = await detectFromPackageJson();
     if (detected) {
       return detected;
     }
     return DEFAULT_INFO;
-  }
-
-  private async detectFromPackageJson(): Promise<VersionInfo | undefined> {
-    const folders = vscode.workspace.workspaceFolders;
-    if (!folders || folders.length === 0) {
-      return undefined;
-    }
-
-    // Check each root package.json (multi-root workspaces supported)
-    for (const folder of folders) {
-      const pkgUri = vscode.Uri.file(path.join(folder.uri.fsPath, 'package.json'));
-      try {
-        const content = await vscode.workspace.fs.readFile(pkgUri);
-        const pkg = JSON.parse(Buffer.from(content).toString('utf-8')) as {
-          dependencies?: Record<string, string>;
-          devDependencies?: Record<string, string>;
-        };
-        const raw =
-          pkg.dependencies?.['@nuxt/ui'] ?? pkg.devDependencies?.['@nuxt/ui'];
-        if (!raw) {
-          continue;
-        }
-        const version = parseMajor(raw);
-        if (version === 3) {
-          return { version: 'v3', baseUrl: V3_BASE, raw, fallback: false };
-        }
-        if (version === 4) {
-          return { version: 'v4', baseUrl: V4_BASE, raw, fallback: false };
-        }
-        // Unknown / unsupported major — fall back to latest but keep the raw
-        return { version: 'v4', baseUrl: V4_BASE, raw, fallback: true };
-      } catch {
-        // Ignore missing or unreadable package.json
-      }
-    }
-    return undefined;
   }
 
   dispose(): void {
@@ -139,17 +92,4 @@ export class VersionService implements vscode.Disposable {
       d.dispose();
     }
   }
-}
-
-/**
- * Extract the major version from a semver range string.
- * Handles `^4.0.0`, `~4.1.2`, `4.x`, `>=4.0.0 <5.0.0`, `npm:@nuxt/ui@4.0.0`, etc.
- */
-function parseMajor(range: string): number | undefined {
-  const match = range.match(/(\d+)/);
-  if (!match) {
-    return undefined;
-  }
-  const n = Number.parseInt(match[1], 10);
-  return Number.isFinite(n) ? n : undefined;
 }

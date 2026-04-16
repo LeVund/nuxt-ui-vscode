@@ -101,40 +101,14 @@ export const NUXT_UI_COMPONENTS: readonly string[] = [
  * Component names as they appear in .vue templates (with the `U` prefix).
  * e.g. `UButton`, `UCommandPalette`.
  */
-export const NUXT_UI_TAG_NAMES: readonly string[] = NUXT_UI_COMPONENTS.map(
-  (name) => `U${name}`,
-);
+export const NUXT_UI_TAG_NAMES: readonly string[] = NUXT_UI_COMPONENTS.map((name) => `U${name}`);
 
 const TAG_SET = new Set(NUXT_UI_TAG_NAMES);
 
 /**
  * Returns true if the given tag name is a known Nuxt UI component.
+ * @deprecated should find the components from package.json
  */
 export function isNuxtUiTag(tagName: string): boolean {
   return TAG_SET.has(tagName);
-}
-
-/**
- * Converts a PascalCase component name (without the `U` prefix) to the
- * kebab-case slug used in documentation URLs.
- *
- * `CommandPalette` → `command-palette`
- * `Button`         → `button`
- */
-export function toKebabCase(componentName: string): string {
-  return componentName
-    .replace(/([a-z0-9])([A-Z])/g, '$1-$2')
-    .replace(/([A-Z])([A-Z][a-z])/g, '$1-$2')
-    .toLowerCase();
-}
-
-/**
- * Converts a full tag name (e.g. `UButton`) to its kebab-case slug
- * (e.g. `button`). Returns `undefined` for non-Nuxt UI tags.
- */
-export function tagToSlug(tagName: string): string | undefined {
-  if (!isNuxtUiTag(tagName)) {
-    return undefined;
-  }
-  return toKebabCase(tagName.slice(1));
 }

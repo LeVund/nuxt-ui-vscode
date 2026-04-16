@@ -1,0 +1,27 @@
+import { isNuxtUiTag } from '../core/components';
+
+/**
+ * Converts a PascalCase component name (without the `U` prefix) to the
+ * kebab-case slug used in documentation URLs.
+ *
+ * `CommandPalette` → `command-palette`
+ * `Button`         → `button`
+ */
+export function toKebabCase(componentName: string): string {
+  return componentName
+    .replace(/([a-z0-9])([A-Z])/g, '$1-$2')
+    .replace(/([A-Z])([A-Z][a-z])/g, '$1-$2')
+    .toLowerCase();
+}
+
+/**
+ * Converts a full tag name (e.g. `UButton`) to its kebab-case slug
+ * (e.g. `button`). Returns `undefined` for non-Nuxt UI tags.
+ */
+export function tagToSlug(tagName: string): string {
+  if (!isNuxtUiTag(tagName)) {
+    throw new Error(`Invalid Nuxt UI tag name: ${tagName}`);
+  }
+
+  return toKebabCase(tagName.slice(1));
+}
