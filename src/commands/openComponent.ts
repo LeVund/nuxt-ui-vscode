@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { NUXT_UI_TAG_NAMES } from '../components';
+import { NUXT_UI_TAG_NAMES } from '../utils/syntaxUtils';
 import { DocPanel } from '../webview/panel';
 
 /**

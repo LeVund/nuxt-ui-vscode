@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
-import { scanComponents } from '../scanner';
 import { Commands } from '../commands/commandIds.enum';
+import { scanComponents } from '../file-scanners/ScanComponents';
 
 /**
  * Shows a clickable `⚡` inlay hint immediately before the `<` of every

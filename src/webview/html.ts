@@ -1,4 +1,4 @@
-import { toKebabCase } from '../components';
+import { toKebabCase } from '../utils/syntaxUtils';
 
 export function homePath(version: 'v3' | 'v4'): string {
   return version === 'v4' ? '/docs/getting-started' : '/getting-started';

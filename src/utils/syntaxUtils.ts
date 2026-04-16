@@ -101,14 +101,13 @@ export const NUXT_UI_COMPONENTS: readonly string[] = [
  * Component names as they appear in .vue templates (with the `U` prefix).
  * e.g. `UButton`, `UCommandPalette`.
  */
-export const NUXT_UI_TAG_NAMES: readonly string[] = NUXT_UI_COMPONENTS.map(
-  (name) => `U${name}`,
-);
+export const NUXT_UI_TAG_NAMES: readonly string[] = NUXT_UI_COMPONENTS.map((name) => `U${name}`);
 
 const TAG_SET = new Set(NUXT_UI_TAG_NAMES);
 
 /**
  * Returns true if the given tag name is a known Nuxt UI component.
+ * @deprecated should find the components from package.json
  */
 export function isNuxtUiTag(tagName: string): boolean {
   return TAG_SET.has(tagName);

@@ -1,9 +1,9 @@
 import * as vscode from 'vscode';
 import { VersionService } from '../version';
-import { tagToSlug } from '../components';
+import { tagToSlug } from '../utils/syntaxUtils';
 import { readComponentInfo, resolveDeclarationPath } from '../utils/typeFileResolver';
-import { renderHtml, homePath, componentPath, extractPath } from './html';
-import { insertSlot, insertProp, insertUiKey } from '../editorActions';
+import { renderHtml, componentPath, extractPath } from './html';
+import { insertSlot, insertProp, insertUiKey } from '../editor-actions/InsertInComponents';
 
 export interface ComponentContext {
   documentUri: vscode.Uri;
@@ -124,4 +124,3 @@ async function resolveComponentInfo({
   log('readComponentInfo result: slots=%o, props=%o, uiKeys=%o', info.slots, info.props, info.uiKeys);
   return info;
 }
-

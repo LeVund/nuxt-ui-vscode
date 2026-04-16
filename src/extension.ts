@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import { VersionService } from './version';
 import { DocPanel } from './webview/panel';
-import { NuxtUiInlayHintsProvider } from './providers/inlayHints';
+import { NuxtUiInlayHintsProvider } from './inlay-hints/InlayHints';
 import { NuxtUiHoverProvider } from './providers/hover';
 import { showComponentMenu } from './commands/componentMenu';
 import { pickAndOpenComponent } from './commands/openComponent';
@@ -60,26 +60,6 @@ export function activate(context: vscode.ExtensionContext): void {
       }
     }),
     vscode.commands.registerCommand(Commands.OpenFromVSCode, async (tagName: string, docUriStr: string, tagOffset: number) => {
-      // TEST
-      // const uri = vscode.Uri.parse(docUriStr);
-      // // tagOffset points to '<'; the tag name starts one character later.
-      // const document = await vscode.workspace.openTextDocument(uri);
-      // const namePosition = document.positionAt(tagOffset + 1);
-      // const locations = await vscode.commands.executeCommand<vscode.LocationLink[]>(
-      //   'vscode.executeDefinitionProvider',
-      //   uri,
-      //   namePosition,
-      // );
-
-      // console.log('--------------');
-      // console.log('--------------');
-      // console.log('--------------');
-      // console.log({ locations });
-      // console.log('--------------');
-      // console.log('--------------');
-      // console.log('--------------');
-
-      // END TEST
       const ctx = { documentUri: vscode.Uri.parse(docUriStr), tagOffset, tagName };
       await panel.openComponent(tagName, ctx);
     }),

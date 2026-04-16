@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { findComponentAt } from '../scanner';
+import { findComponentAt } from '../file-scanners/scanner';
 import { Commands } from '../commands/commandIds.enum';
 
 /**
