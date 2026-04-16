@@ -12,7 +12,6 @@ import { insertUiKey } from '../insertions/insertUiKey';
 export class DocPanel {
   private static readonly VIEW_TYPE = 'nuxtUi.docs';
   private panel: vscode.WebviewPanel | undefined;
-  private currentUrl: string | undefined;
   private _currentContext: ComponentTagFileContext | undefined;
   private version: VersionService;
 
