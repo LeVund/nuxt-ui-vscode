@@ -1,5 +1,4 @@
 import * as vscode from 'vscode';
-import { isNuxtUiTag } from '../utils/syntaxUtils';
 import { scanComponents } from './ScanComponents';
 import { ComponentMatch } from './FileScanners.interface';
 

@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 import { VersionService } from '../version';
 import { tagToSlug } from '../utils/syntaxUtils';
 import { readComponentInfo, resolveDeclarationPath } from '../utils/typeFileResolver';
-import { renderHtml, componentPath, extractPath } from './html';
+import { renderHtml, componentPath } from './html';
 import { insertSlot, insertProp, insertUiKey } from '../editor-actions/InsertInComponents';
 
 export interface ComponentContext {
@@ -21,12 +21,6 @@ export class DocPanel {
   constructor(version: VersionService) {
     this.version = version;
   }
-
-  // openHome(): void {
-  //   this.currentContext = undefined;
-  //   const url = `${this.version.current.baseUrl}${homePath(this.version.current.version)}`;
-  //   this.openComponent('Nuxt UI — Docs', url, undefined, { slots: [], props: [], uiKeys: [] });
-  // }
 
   async openComponent(tagName: string, context?: ComponentContext): Promise<void> {
     this.currentContext = context;

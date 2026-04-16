@@ -1,20 +1,7 @@
 import { toKebabCase } from '../utils/syntaxUtils';
 
-export function homePath(version: 'v3' | 'v4'): string {
-  return version === 'v4' ? '/docs/getting-started' : '/getting-started';
-}
-
 export function componentPath(version: 'v3' | 'v4', slug: string): string {
   return version === 'v4' ? `/docs/components/${slug}` : `/components/${slug}`;
-}
-
-export function extractPath(url: string): string {
-  try {
-    const parsed = new URL(url);
-    return `${parsed.pathname}${parsed.search}${parsed.hash}`;
-  } catch {
-    return '/';
-  }
 }
 
 function escapeAttr(value: string): string {

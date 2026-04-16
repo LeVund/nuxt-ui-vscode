@@ -34,9 +34,7 @@ export function activate(context: vscode.ExtensionContext): void {
 
   // Commands declared in package.json
   context.subscriptions.push(
-    vscode.commands.registerCommand(Commands.OpenHome, () => {
-      // panel.openHome();
-    }),
+    vscode.commands.registerCommand(Commands.OpenHome, () => {}),
     vscode.commands.registerCommand(Commands.OpenComponent, async () => {
       await pickAndOpenComponent(panel);
     }),
