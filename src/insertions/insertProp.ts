@@ -1,9 +1,9 @@
 import * as vscode from 'vscode';
-import type { ComponentContext } from '../core/types';
+import type { ComponentTagFileContext } from '../core/types';
 import { getTagContext } from '../editor/getTagContext';
 import { toKebabCase } from '../parsing/caseUtils';
 
-export async function insertProp({ tagOffset, tagName, ...ctx }: ComponentContext, propName: string): Promise<void> {
+export async function insertProp({ tagOffset, tagName, ...ctx }: ComponentTagFileContext, propName: string): Promise<void> {
   const parsed = await getTagContext({ tagOffset, tagName, ...ctx });
   if (!parsed) return;
   const { document, text, tag } = parsed;

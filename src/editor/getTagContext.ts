@@ -1,12 +1,12 @@
 import * as vscode from 'vscode';
-import type { ComponentContext, ParsedTag } from '../core/types';
+import type { ComponentTagFileContext, ParsedTag } from '../core/types';
 import { getParsedTag } from '../parsing/parseTag';
 
 export async function getTagContext({
   documentUri,
   tagOffset,
   tagName,
-}: ComponentContext): Promise<{ document: vscode.TextDocument; text: string; tag: ParsedTag } | undefined> {
+}: ComponentTagFileContext): Promise<{ document: vscode.TextDocument; text: string; tag: ParsedTag } | undefined> {
   let document: vscode.TextDocument;
   try {
     document = await vscode.workspace.openTextDocument(documentUri);

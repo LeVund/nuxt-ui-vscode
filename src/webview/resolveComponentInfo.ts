@@ -1,9 +1,9 @@
 import * as vscode from 'vscode';
-import type { ComponentContext, ComponentInfo } from '../core/types';
+import type { ComponentTagFileContext, ComponentInfo } from '../core/types';
 import { resolveDeclarationPath } from '../typeInfo/resolveDeclarationPath';
 import { readComponentInfo } from '../typeInfo/readComponentInfo';
 
-export async function resolveComponentInfo({ documentUri, tagOffset }: ComponentContext): Promise<ComponentInfo> {
+export async function resolveComponentInfo({ documentUri, tagOffset }: ComponentTagFileContext): Promise<ComponentInfo> {
   const empty: ComponentInfo = { slots: [], props: [], uiKeys: [] };
 
   const document = await vscode.workspace.openTextDocument(documentUri);

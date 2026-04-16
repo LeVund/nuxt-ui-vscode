@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import type { ComponentContext } from '../core/types';
+import type { ComponentTagFileContext } from '../core/types';
 import { getTagContext } from '../editor/getTagContext';
 
 function findUiAttribute(text: string, tagOffset: number, closeCharIdx: number): RegExpExecArray | null {
@@ -7,7 +7,11 @@ function findUiAttribute(text: string, tagOffset: number, closeCharIdx: number):
   return /(?::ui|v-bind:ui)\s*=\s*(["'])/.exec(tagText);
 }
 
-function parseUiObject(text: string, attrValueStart: number, quoteChar: string): { attrValue: string; closingQuotePos: number } | undefined {
+function parseUiObject(
+  text: string,
+  attrValueStart: number,
+  quoteChar: string,
+): { attrValue: string; closingQuotePos: number } | undefined {
   let closingQuotePos = -1;
   for (let j = attrValueStart; j < text.length; j++) {
     if (text[j] === quoteChar) {
@@ -52,7 +56,7 @@ function buildAppendKeyEdit(
   return edit;
 }
 
-export async function insertUiKey({ tagOffset, tagName, ...ctx }: ComponentContext, keyName: string): Promise<void> {
+export async function insertUiKey({ tagOffset, tagName, ...ctx }: ComponentTagFileContext, keyName: string): Promise<void> {
   const parsed = await getTagContext({ tagOffset, tagName, ...ctx });
   if (!parsed) return;
   const { document, text, tag } = parsed;

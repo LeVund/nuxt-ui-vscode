@@ -1,4 +1,4 @@
-import { ComponentContext } from '../core/types';
+import { ComponentTagFileContext } from '../core/types';
 import { DocPanel } from '../webview/DocPanel';
 
 /**
@@ -6,7 +6,7 @@ import { DocPanel } from '../webview/DocPanel';
  * When `context` is provided (tag URI + offset), the panel will also show
  * the slot-insertion panel for the component.
  */
-export async function showComponentMenu(tagName: string, panel: DocPanel, context?: ComponentContext): Promise<void> {
+export async function showComponentMenu(tagName: string, panel: DocPanel, context?: ComponentTagFileContext): Promise<void> {
   if (!tagName) {
     return;
   }

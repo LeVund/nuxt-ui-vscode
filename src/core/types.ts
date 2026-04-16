@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 
 // From src/webview/panel.ts
-export interface ComponentContext {
+export interface ComponentTagFileContext {
   documentUri: vscode.Uri;
   tagOffset: number;
   tagName: string;

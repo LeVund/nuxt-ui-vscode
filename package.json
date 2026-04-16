@@ -33,6 +33,10 @@
       {
         "command": "nuxtUiHelper.showComponentMenu",
         "title": "Nuxt UI helper: Show Component Actions"
+      },
+      {
+        "command": "nuxtUiHelper.openComponentWithoutContext",
+        "title": "Nuxt UI helper: Open Component without Context (for testing)"
       }
     ],
     "menus": {

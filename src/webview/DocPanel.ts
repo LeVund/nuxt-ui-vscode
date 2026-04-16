@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import type { ComponentContext, ComponentInfo } from '../core/types';
+import type { ComponentTagFileContext, ComponentInfo } from '../core/types';
 import { VersionService } from '../version/VersionService';
 import { tagToSlug } from '../parsing/caseUtils';
 import { renderHtml } from './html/renderHtml';
@@ -13,14 +13,14 @@ export class DocPanel {
   private static readonly VIEW_TYPE = 'nuxtUi.docs';
   private panel: vscode.WebviewPanel | undefined;
   private currentUrl: string | undefined;
-  private currentContext: ComponentContext | undefined;
+  private currentContext: ComponentTagFileContext | undefined;
   private version: VersionService;
 
   constructor(version: VersionService) {
     this.version = version;
   }
 
-  async openComponent(tagName: string, context?: ComponentContext): Promise<void> {
+  async openComponent(tagName: string, context?: ComponentTagFileContext): Promise<void> {
     if (!context) {
       void vscode.window.showWarningMessage(`No file context provided while fetching for "${tagName}".`);
       void vscode.window.showWarningMessage(
@@ -38,8 +38,8 @@ export class DocPanel {
     }
 
     const nuxtUiWebSiteUrl = `${this.version.current.baseUrl}${componentPath(this.version.current.version, slug)}`;
-    const interactiveProperties = context ? await resolveComponentInfo(context) : { slots: [], props: [], uiKeys: [] };
-    const title = context ? `Nuxt UI — ${tagName}` : 'Nuxt UI — Component';
+    const interactiveProperties = await resolveComponentInfo(context);
+    const title = `Nuxt UI — ${tagName}`;
 
     if (!this.panel) this.initPanel(title);
     this.updatePanel(title, nuxtUiWebSiteUrl, interactiveProperties);

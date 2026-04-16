@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import type { ComponentContext, ParsedTag } from '../core/types';
+import type { ComponentTagFileContext, ParsedTag } from '../core/types';
 import { getTagContext } from '../editor/getTagContext';
 import { findMatchingClose } from '../parsing/findMatchingClose';
 import { getLineIndentation } from '../editor/indentation';
@@ -48,7 +48,7 @@ function buildPairedSlotEdit(
   return edit;
 }
 
-export async function insertSlot({ tagOffset, tagName, ...ctx }: ComponentContext, slotName: string): Promise<void> {
+export async function insertSlot({ tagOffset, tagName, ...ctx }: ComponentTagFileContext, slotName: string): Promise<void> {
   const parsed = await getTagContext({ tagOffset, tagName, ...ctx });
   if (!parsed) return;
 
