@@ -22,7 +22,7 @@ function fromSelfClosingToDoubleTag(
   return edit;
 }
 
-function buildPairedSlotEdit(
+function getPairedTagEdit(
   document: vscode.TextDocument,
   text: string,
   tag: ParsedTag,
@@ -31,21 +31,24 @@ function buildPairedSlotEdit(
   indentation: string,
   slotIndent: string,
 ): vscode.WorkspaceEdit | undefined {
-  const closingIdx = findMatchingCloseTag(text, tagName, tag.openTagEnd);
-  if (closingIdx === -1) {
+  const closingTagIdx = findMatchingCloseTag(text, tagName, tag.openTagEnd);
+
+  if (closingTagIdx === -1) {
     void vscode.window.showWarningMessage(`Could not find the closing </${tagName}> tag.`);
     return undefined;
   }
 
-  const innerContent = text.slice(tag.openTagEnd, closingIdx);
+  const innerContent = text.slice(tag.openTagEnd, closingTagIdx);
+
   if (new RegExp(`#${slotName}\\b`).test(innerContent)) {
     void vscode.window.showInformationMessage(`Slot #${slotName} is already used in <${tagName}>.`);
     return undefined;
   }
 
   const edit = new vscode.WorkspaceEdit();
-  const insertPos = document.positionAt(closingIdx);
+  const insertPos = document.positionAt(closingTagIdx);
   const insertion = `${slotIndent}<template #${slotName}>\n${slotIndent}</template>\n${indentation}`;
+
   edit.insert(document.uri, insertPos, insertion);
   return edit;
 }
@@ -65,6 +68,6 @@ export async function insertSlot(componentTagFileContext: ComponentTagFileContex
     await vscode.workspace.applyEdit(prepareTag);
   }
 
-  const addSlotToTag = buildPairedSlotEdit(document, text, tag, tagName, slotName, indentation, slotIndent);
+  const addSlotToTag = getPairedTagEdit(document, text, tag, tagName, slotName, indentation, slotIndent);
   if (addSlotToTag) await vscode.workspace.applyEdit(addSlotToTag);
 }
