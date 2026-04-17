@@ -1,25 +1,38 @@
+/**
+ * Finds the index of the closing `</tagName>` that matches the opening tag ending at `fromIndex`.
+ *
+ * `fromIndex` must point to just after the opening `>`, so any `<tagName` found
+ * beyond that point is necessarily a nested tag. Each nested open/close pair
+ * increments then decrements `depth`, and the first `</tagName>` encountered
+ * at `depth === 0` is the matching close.
+ *
+ * @param text - The full document text to search in.
+ * @param tagName - The tag name to match (e.g. `"UCard"`).
+ * @param fromIndex - Character index just after the opening tag's `>`.
+ * @returns The index of the matching `</tagName>`, or `-1` if not found.
+ */
 export function findMatchingClose(text: string, tagName: string, fromIndex: number): number {
-  const openRe = new RegExp(`<${tagName}\\b`, 'g');
-  const closeRe = new RegExp(`<\\/${tagName}>`, 'g');
+  const openRegExp = new RegExp(`<${tagName}\\b`, 'g');
+  const closeRegExp = new RegExp(`<\\/${tagName}>`, 'g');
 
-  openRe.lastIndex = fromIndex;
-  closeRe.lastIndex = fromIndex;
+  openRegExp.lastIndex = fromIndex;
+  closeRegExp.lastIndex = fromIndex;
 
   let depth = 0;
-  let nextOpen = openRe.exec(text);
-  let nextClose = closeRe.exec(text);
+  let nextOpeningTag = openRegExp.exec(text);
+  let nextClosingTag = closeRegExp.exec(text);
 
-  while (nextClose !== null) {
-    const openIdx = nextOpen ? nextOpen.index : Infinity;
-    const closeIdx = nextClose.index;
+  while (nextClosingTag !== null) {
+    const openingTagIdx = nextOpeningTag ? nextOpeningTag.index : Infinity;
+    const closingTagIdx = nextClosingTag.index;
 
-    if (openIdx < closeIdx) {
+    if (openingTagIdx < closingTagIdx) {
       depth++;
-      nextOpen = openRe.exec(text);
+      nextOpeningTag = openRegExp.exec(text);
     } else {
-      if (depth === 0) return closeIdx;
+      if (depth === 0) return closingTagIdx;
       depth--;
-      nextClose = closeRe.exec(text);
+      nextClosingTag = closeRegExp.exec(text);
     }
   }
 
