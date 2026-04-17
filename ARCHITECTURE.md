@@ -29,7 +29,7 @@ src/
 │   └── insertUiKey.ts                 # Inject key inside :ui="{ … }"
 ├── parsing/
 │   ├── caseUtils.ts                   # PascalCase ↔ kebab-case + tag → URL slug
-│   ├── findMatchingClose.ts           # Depth-aware </Tag> finder
+│   ├── findMatchingCloseTag.ts           # Depth-aware </Tag> finder
 │   ├── parseTag.ts                    # Find the end of an opening tag (string-aware)
 │   └── scanComponents.ts              # Regex scanner for <U…> tags
 ├── providers/
@@ -229,13 +229,13 @@ Command IDs are centralized in the `Commands` enum to avoid string drift.
 
 Lightweight regex / state-machine helpers — no full HTML/Vue parser is used.
 
-| Function                                      | File                                                             | Role                                                                                                                   |
-| --------------------------------------------- | ---------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
-| `scanComponents(document, range?)`            | [scanComponents.ts](src/parsing/scanComponents.ts)               | Runs `/<(U[A-Z][A-Za-z0-9]*)\b/g`, validates each match against `isNuxtUiTag()`, returns `{ tagName, range, start }[]` |
-| `getParsedTag(text, tagStart, tagName)`       | [parseTag.ts](src/parsing/parseTag.ts)                           | String-aware scan of the opening tag; returns `{ openTagEnd, selfClosing, closeCharIdx }`                              |
-| `findMatchingClose(text, tagName, fromIndex)` | [parsing/findMatchingClose.ts](src/parsing/findMatchingClose.ts) | Depth-aware finder for the matching `</Tag>` (handles nested same-name tags)                                           |
-| `toKebabCase(name)`                           | [caseUtils.ts](src/parsing/caseUtils.ts)                         | `PascalCase` → `kebab-case`                                                                                            |
-| `tagToSlug(tagName)`                          | [caseUtils.ts](src/parsing/caseUtils.ts)                         | Validates `UFoo` and converts to `foo` URL slug                                                                        |
+| Function                                         | File                                                                   | Role                                                                                                                   |
+| ------------------------------------------------ | ---------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| `scanComponents(document, range?)`               | [scanComponents.ts](src/parsing/scanComponents.ts)                     | Runs `/<(U[A-Z][A-Za-z0-9]*)\b/g`, validates each match against `isNuxtUiTag()`, returns `{ tagName, range, start }[]` |
+| `getParsedTag(text, tagStart, tagName)`          | [parseTag.ts](src/parsing/parseTag.ts)                                 | String-aware scan of the opening tag; returns `{ openTagEnd, selfClosing, closeCharIdx }`                              |
+| `findMatchingCloseTag(text, tagName, fromIndex)` | [parsing/findMatchingCloseTag.ts](src/parsing/findMatchingCloseTag.ts) | Depth-aware finder for the matching `</Tag>` (handles nested same-name tags)                                           |
+| `toKebabCase(name)`                              | [caseUtils.ts](src/parsing/caseUtils.ts)                               | `PascalCase` → `kebab-case`                                                                                            |
+| `tagToSlug(tagName)`                             | [caseUtils.ts](src/parsing/caseUtils.ts)                               | Validates `UFoo` and converts to `foo` URL slug                                                                        |
 
 ---
 

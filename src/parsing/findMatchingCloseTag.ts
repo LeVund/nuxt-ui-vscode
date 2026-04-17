@@ -11,7 +11,7 @@
  * @param fromIndex - Character index just after the opening tag's `>`.
  * @returns The index of the matching `</tagName>`, or `-1` if not found.
  */
-export function findMatchingClose(text: string, tagName: string, fromIndex: number): number {
+export function findMatchingCloseTag(text: string, tagName: string, fromIndex: number): number {
   const openRegExp = new RegExp(`<${tagName}\\b`, 'g');
   const closeRegExp = new RegExp(`<\\/${tagName}>`, 'g');
 
