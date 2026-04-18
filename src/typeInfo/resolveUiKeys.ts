@@ -14,6 +14,8 @@ import * as vscode from 'vscode';
 export async function resolveUiKeys(uri: vscode.Uri, position: vscode.Position): Promise<string[]> {
   const hovers = (await vscode.commands.executeCommand<vscode.Hover[]>('vscode.executeHoverProvider', uri, position)) ?? [];
 
+  console.log('resolveUIKeys', { hovers });
+
   const text = hovers
     .flatMap((h) => h.contents)
     .map((c) => (typeof c === 'string' ? c : c.value))

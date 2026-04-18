@@ -24,6 +24,7 @@ export class DocPanel {
   private get title() {
     return `Nuxt UI — ${this.currentContext.tagName}`;
   }
+
   constructor(version: VersionService) {
     this.version = version;
   }

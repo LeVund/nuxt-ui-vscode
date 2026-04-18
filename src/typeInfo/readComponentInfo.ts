@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import type { ComponentInfo } from '../core/types';
 import { resolveUiKeys } from './resolveUiKeys';
+import { log } from 'console';
 
 async function loadDocumentSymbols(uri: vscode.Uri): Promise<vscode.DocumentSymbol[]> {
   try {
@@ -35,7 +36,7 @@ export async function readComponentInfo(declarationFilePath: string): Promise<Co
   const slotsSymbol = symbols.find((s) => s.name.endsWith('Slots'));
 
   const slots = slotsSymbol?.children.map((c) => c.name) ?? [];
-  const props = propsSymbol?.children.map((c) => c.name) ?? [];
+  const props = propsSymbol?.children.flatMap((c) => (c.name !== 'ui' ? c.name : [])) ?? [];
 
   let uiKeys: string[] = [];
   const uiProp = propsSymbol?.children.find((c) => c.name === 'ui');
