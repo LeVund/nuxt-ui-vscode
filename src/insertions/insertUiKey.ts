@@ -32,7 +32,7 @@ function buildNewUiAttributeEdit(
   const charBefore = closeCharIdx > 0 ? text[closeCharIdx - 1] : '';
   const prefix = charBefore === ' ' || charBefore === '\t' ? '' : ' ';
   const edit = new vscode.WorkspaceEdit();
-  edit.insert(document.uri, document.positionAt(closeCharIdx), `${prefix}:ui="{ ${keyName}: '' }"`);
+  edit.insert(document.uri, document.positionAt(closeCharIdx), `${prefix}:ui="{}"`);
   return edit;
 }
 
@@ -61,14 +61,12 @@ export async function insertUiKey({ tagOffset, tagName, ...ctx }: ComponentTagFi
   if (!parsed) return;
   const { document, text, tag } = parsed;
 
-  const uiAttrMatch = findUiAttribute(text, tagOffset, tag.closeCharIdx);
-
-  if (!uiAttrMatch) {
+  if (!findUiAttribute(text, tagOffset, tag.closeCharIdx)) {
     const edit = buildNewUiAttributeEdit(document, text, tag.closeCharIdx, keyName);
     await vscode.workspace.applyEdit(edit);
-    return;
   }
 
+  const uiAttrMatch = findUiAttribute(text, tagOffset, tag.closeCharIdx)!;
   const quoteChar = uiAttrMatch[1];
   const attrValueStart = tagOffset + uiAttrMatch.index + uiAttrMatch[0].length;
 
