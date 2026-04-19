@@ -35,6 +35,44 @@ function extractEventsFromText(text: string): string[] {
 }
 
 /**
+ * Extracts slot names from the `*Slots` type/interface block in the raw file text.
+ * Handles generic type aliases (e.g. `type AccordionSlots<T> = { ... }`)
+ * that the document symbol provider doesn't expose children for.
+ */
+function extractSlotsFromText(text: string): string[] {
+  const startMatch = text.match(/(?:interface|type)\s+\w*Slots[^{]*\{/);
+  if (!startMatch || startMatch.index === undefined) return [];
+
+  // Find the matching closing brace, tracking nesting depth
+  let depth = 1;
+  let i = startMatch.index + startMatch[0].length;
+  const blockStart = i;
+  while (i < text.length && depth > 0) {
+    if (text[i] === '{' || text[i] === '(') depth++;
+    else if (text[i] === '}' || text[i] === ')') depth--;
+    i++;
+  }
+  const block = text.slice(blockStart, i - 1);
+
+  // Extract top-level property names only (depth 0 within the block)
+  const slots: string[] = [];
+  depth = 0;
+  let lineStart = 0;
+  for (let j = 0; j <= block.length; j++) {
+    const ch = block[j];
+    if (ch === '{' || ch === '(') depth++;
+    else if (ch === '}' || ch === ')') depth--;
+    else if ((ch === ';' || ch === '\n' || j === block.length) && depth === 0) {
+      const line = block.slice(lineStart, j).trim();
+      const nameMatch = line.match(/^(\w+)\s*\??\s*[:(]/);
+      if (nameMatch) slots.push(nameMatch[1]);
+      lineStart = j + 1;
+    }
+  }
+  return slots;
+}
+
+/**
  * Reads slots, props, and ui keys from a `.vue.d.ts` file using the VSCode
  * document symbol provider, which delegates to the active TypeScript / Volar
  * language server. No manual regex parsing of the file is required.
@@ -53,7 +91,8 @@ export async function readComponentInfo(declarationFilePath: string): Promise<Co
   const slotsSymbol = symbols.find((s) => s.name.endsWith('Slots'));
   const emitsSymbol = symbols.find((s) => s.name.endsWith('Emits'));
 
-  const slots = slotsSymbol?.children.map((c) => c.name) ?? [];
+  const slotsFromSymbols = slotsSymbol?.children.map((c) => c.name) ?? [];
+  const slots = slotsFromSymbols.length > 0 ? slotsFromSymbols : extractSlotsFromText(text);
   const allProps = propsSymbol?.children.map((c) => ({ ...c, name: c.name.replaceAll('"', '') })).filter((c) => c.name !== 'ui') ?? [];
   const isEvent = (name: string) => name.startsWith('on') && name[2] !== undefined && name[2] === name[2].toUpperCase();
   const props = allProps.filter((c) => !isEvent(c.name)).map((c) => c.name);
