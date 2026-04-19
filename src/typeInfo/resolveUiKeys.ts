@@ -1,42 +1,41 @@
+import { log } from 'console';
 import * as vscode from 'vscode';
 
 /**
- * Hovers over the `ui` property and parses the key names out of its inline
- * object type.
- *
- * The TypeScript hover text for `ui?: { root?: string; base?: string }` looks
- * like:
- *   ```
- *   (property) UButton.ui?: { root?: string; base?: string; … } | undefined
- *   ```
- * We extract the first `{ … }` block and collect every `key?:` / `key:` entry.
+ * Resolves the keys of the `ui` prop by finding the `theme` import in the
+ * declaration file, following it to the actual theme file via the definition
+ * provider, and extracting the `slots` object keys via document symbols.
  */
-export async function resolveUiKeys(uri: vscode.Uri, position: vscode.Position): Promise<string[]> {
-  const hovers = (await vscode.commands.executeCommand<vscode.Hover[]>('vscode.executeHoverProvider', uri, position)) ?? [];
+export async function resolveUiKeys(declarationUri: vscode.Uri): Promise<string[]> {
+  const document = await vscode.workspace.openTextDocument(declarationUri);
+  const text = document.getText();
 
-  const text = hovers
-    .flatMap((h) => h.contents)
-    .map((c) => (typeof c === 'string' ? c : c.value))
-    .join('\n');
+  const themeImportMatch = text.match(/import\s+theme\s+from\s+['"](.+)['"]/);
+  if (!themeImportMatch) return [];
 
-  // Find the first `{…}` block in the hover text (the ui object type).
-  const braceOpen = text.indexOf('{');
-  if (braceOpen === -1) return [];
+  const themePosition = document.positionAt(text.indexOf(themeImportMatch[0]) + themeImportMatch[0].indexOf('theme'));
 
-  let depth = 1;
-  let pos = braceOpen + 1;
-  while (pos < text.length && depth > 0) {
-    if (text[pos] === '{') depth++;
-    else if (text[pos] === '}') depth--;
-    pos++;
+  const locations = await vscode.commands.executeCommand<(vscode.Location | vscode.LocationLink)[]>(
+    'vscode.executeDefinitionProvider',
+    declarationUri,
+    themePosition,
+  );
+  if (!locations?.length) return [];
+
+  const loc = locations[0];
+  const themeUri = 'targetUri' in loc ? loc.targetUri : loc.uri;
+
+  try {
+    await vscode.workspace.openTextDocument(themeUri);
+  } catch {
+    return [];
   }
 
-  const block = text.slice(braceOpen + 1, pos - 1);
-  const keys: string[] = [];
-  const keyRe = /^\s*(\w+)\s*\??\s*:/gm;
-  let m: RegExpExecArray | null;
-  while ((m = keyRe.exec(block)) !== null) {
-    keys.push(m[1]);
-  }
-  return keys;
+  const symbols =
+    (await vscode.commands.executeCommand<vscode.DocumentSymbol[]>('vscode.executeDocumentSymbolProvider', themeUri)) ?? [];
+
+  const defaultSymbol = symbols.find((s) => s.name === 'default');
+  const slotsSymbol = defaultSymbol?.children?.find((s) => s.name === '"slots"')?.children ?? [];
+
+  return slotsSymbol.map((c) => c.name.replaceAll('"', ''));
 }

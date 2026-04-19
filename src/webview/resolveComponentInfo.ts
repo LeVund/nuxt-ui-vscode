@@ -18,7 +18,7 @@ export async function resolveComponentInfo({ documentUri, tagOffset }: Component
 
   const rawPath = locations?.[0]?.targetUri.fsPath;
 
-  // Volar's definition provider often returns the `.vue` source file path; we need to resolve it to the adjacent `.vue.d.ts` declaration file.
+  // Definition provider often returns the `.vue` source file path; resolve it to the adjacent `.vue.d.ts` declaration file.
   const declarationPath = rawPath ? resolveDeclarationPath(rawPath) : undefined;
 
   if (!declarationPath) return empty;

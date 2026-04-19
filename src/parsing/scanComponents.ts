@@ -21,16 +21,18 @@ export function scanComponents(document: vscode.TextDocument, range?: vscode.Ran
   let match: RegExpExecArray | null;
   while ((match = regex.exec(text)) !== null) {
     const tagName = match[1];
-    if (!isNuxtUiTag(tagName)) {
-      continue;
-    }
+
+    if (!isNuxtUiTag(tagName)) continue;
+
     const openOffset = match.index; // position of '<'
     const nameEndOffset = openOffset + 1 + tagName.length;
     const start = document.positionAt(openOffset);
     const end = document.positionAt(nameEndOffset);
+
     if (range && !range.contains(start)) {
       continue;
     }
+
     results.push({
       tagName,
       range: new vscode.Range(start, end),
