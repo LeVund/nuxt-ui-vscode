@@ -3,6 +3,7 @@ import type { ComponentTagFileContext } from '../core/types';
 import { VersionService } from '../version/VersionService';
 import { tagToSlug } from '../parsing/caseUtils';
 import { renderHtml } from './html/renderHtml';
+import { renderPlaceholder } from './html/renderPlaceholder';
 import { componentPath } from './urls';
 import { resolveComponentInfo } from './resolveComponentInfo';
 import { insertSlot } from '../insertions/insertSlot';
@@ -53,9 +54,8 @@ export class DocPanel implements vscode.WebviewViewProvider {
     );
 
     // If a component was already requested before the view was ready, render it now
-    if (this._currentContext) {
-      this.updatePanel();
-    }
+    if (this._currentContext) this.updatePanel();
+    else webviewView.webview.html = renderPlaceholder();
   }
 
   async openComponent(context: ComponentTagFileContext): Promise<void> {
