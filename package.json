@@ -60,15 +60,10 @@
           "default": "auto",
           "description": "Which Nuxt UI documentation version to display. 'auto' reads the installed @nuxt/ui version from the workspace package.json."
         },
-        "nuxtUi.inlayHints.enabled": {
+"nuxtUi.codeLens.enabled": {
           "type": "boolean",
           "default": true,
-          "description": "Show a clickable inlay hint next to Nuxt UI component tags."
-        },
-        "nuxtUi.hover.enabled": {
-          "type": "boolean",
-          "default": true,
-          "description": "Show a hover tooltip with actions on Nuxt UI component tags."
+          "description": "Show a CodeLens above lines containing Nuxt UI component tags."
         }
       }
     }
