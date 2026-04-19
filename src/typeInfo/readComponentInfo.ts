@@ -11,7 +11,8 @@ async function loadDocumentSymbols(uri: vscode.Uri): Promise<{ symbols: vscode.D
   }
 
   try {
-    const symbols = (await vscode.commands.executeCommand<vscode.DocumentSymbol[]>('vscode.executeDocumentSymbolProvider', uri)) ?? [];
+    const symbols =
+      (await vscode.commands.executeCommand<vscode.DocumentSymbol[]>('vscode.executeDocumentSymbolProvider', uri)) ?? [];
     return { symbols, text: doc.getText() };
   } catch {
     return { symbols: [], text: doc.getText() };
@@ -54,8 +55,13 @@ function resolveSlots(slotsSymbol: vscode.DocumentSymbol | undefined, text: stri
   return fromSymbols.length > 0 ? fromSymbols : extractTopLevelKeys(text, /(?:interface|type)\s+\w*Slots[^{]*\{/);
 }
 
-function resolveProps(propsSymbol: vscode.DocumentSymbol | undefined): { props: string[]; hasUi: boolean; eventsFromProps: string[] } {
-  const allProps = propsSymbol?.children.map((c) => ({ ...c, name: c.name.replaceAll('"', '') })).filter((c) => c.name !== 'ui') ?? [];
+function resolveProps(propsSymbol: vscode.DocumentSymbol | undefined): {
+  props: string[];
+  hasUi: boolean;
+  eventsFromProps: string[];
+} {
+  const allProps =
+    propsSymbol?.children.map((c) => ({ ...c, name: c.name.replaceAll('"', '') })).filter((c) => c.name !== 'ui') ?? [];
   const isEvent = (name: string) => name.startsWith('on') && name[2] !== undefined && name[2] === name[2].toUpperCase();
 
   return {
@@ -68,7 +74,7 @@ function resolveProps(propsSymbol: vscode.DocumentSymbol | undefined): { props: 
 function resolveEvents(emitsSymbol: vscode.DocumentSymbol | undefined, text: string, eventsFromProps: string[]): string[] {
   const fromEmits = emitsSymbol?.children.map((c) => c.name.replaceAll("'", '')) ?? [];
   const fromText = extractEventsFromText(text);
-  return [...new Set([...eventsFromProps, ...fromEmits, ...fromText])];
+  return [...eventsFromProps, ...fromEmits, ...fromText];
 }
 
 function extractEventsFromText(text: string): string[] {
@@ -96,5 +102,10 @@ export async function readComponentInfo(declarationFilePath: string): Promise<Co
   const events = resolveEvents(emitsSymbol, text, eventsFromProps);
   const uiKeys = hasUi ? await resolveUiKeys(uri) : [];
 
-  return { slots, props, events, uiKeys };
+  return {
+    slots: [...new Set(slots.map((s) => s.toLowerCase()))],
+    props: [...new Set(props.map((p) => p.toLowerCase()))],
+    events: [...new Set(events.map((e) => e.toLowerCase()))],
+    uiKeys: [...new Set(uiKeys.map((k) => k.toLowerCase()))],
+  };
 }
