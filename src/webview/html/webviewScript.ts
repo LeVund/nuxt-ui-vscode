@@ -38,10 +38,11 @@ export const WEBVIEW_SCRIPT = `
     var vscode = acquireVsCodeApi();
 
     function handleTreeItem(item) {
+      var value = item.dataset.value;
       if (item.dataset.slot) {
-        vscode.postMessage({ command: 'insertSlot', slotName: item.dataset.slot });
+        vscode.postMessage({ command: 'insertSlot', slotName: item.dataset.slot, binding: value });
       } else if (item.dataset.prop) {
-        vscode.postMessage({ command: 'insertProp', propName: item.dataset.prop });
+        vscode.postMessage({ command: 'insertProp', propName: item.dataset.prop, value: value });
       } else if (item.dataset.event) {
         vscode.postMessage({ command: 'insertEvent', eventName: item.dataset.event });
       } else if (item.dataset.uiKey) {

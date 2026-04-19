@@ -18,12 +18,14 @@ export function renderSection(
           .map((v) => {
             if (v.children && v.children.length > 0) {
               const subId = `${id}-${escapeAttr(v.name)}`;
-              const subItems = v.children
-                .map(
+              const emptyItem = `<li class="tree-item tree-sub-item tree-sub-empty" role="treeitem" tabindex="0" ${items[0].dataAttr}="${escapeAttr(v.name)}">empty</li>`;
+              const subItems = [
+                emptyItem,
+                ...v.children.map(
                   (c) =>
-                    `<li class="tree-item tree-sub-item" role="treeitem" tabindex="0">${escapeHtml(c)}</li>`,
-                )
-                .join('\n');
+                    `<li class="tree-item tree-sub-item" role="treeitem" tabindex="0" ${items[0].dataAttr}="${escapeAttr(v.name)}" data-value="${escapeAttr(c)}">${escapeHtml(c)}</li>`,
+                ),
+              ].join('\n');
               return `<li class="tree-group" role="treeitem">
                 <div class="tree-group-header" role="button" tabindex="0" data-subtree="${subId}" ${items[0].dataAttr}="${escapeAttr(v.name)}">
                   <span class="tree-group-chevron"></span>

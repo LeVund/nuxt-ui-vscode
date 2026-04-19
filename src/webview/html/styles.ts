@@ -215,7 +215,10 @@ export const STYLES = `
       padding-left: 44px;
       font-size: 12px;
       color: var(--vscode-descriptionForeground, rgba(204,204,204,0.7));
-      cursor: default;
+    }
+
+    .tree-sub-empty {
+      font-style: italic;
     }
 
     /* ---- Resize handle ---- */
