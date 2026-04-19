@@ -40,6 +40,12 @@ export const STYLES = `
       background: var(--vscode-sideBarSectionHeader-background, transparent);
     }
 
+    .treeview-count {
+      font-weight: 300;
+      opacity: 0.7;
+      margin-left: 4px;
+    }
+
     .treeview-header:hover {
       background: var(--vscode-list-hoverBackground, rgba(255,255,255,0.04));
     }

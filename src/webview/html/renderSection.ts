@@ -21,7 +21,7 @@ export function renderSection(
     <div class="treeview is-open" id="${id}">
       <div class="treeview-header" role="button" tabindex="0" data-target="${id}">
         <span class="treeview-chevron"></span>
-        ${escapeHtml(title)}
+        ${escapeHtml(title)}<span class="treeview-count">${values.length} item${values.length !== 1 ? 's' : ''}</span>
       </div>
       <div class="treeview-body" role="tree">
         ${body}

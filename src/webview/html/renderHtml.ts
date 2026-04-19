@@ -4,14 +4,21 @@ import { STYLES } from './styles';
 import { WEBVIEW_SCRIPT } from './webviewScript';
 import { renderSection } from './renderSection';
 
-export function renderHtml(url: string, tagName: string | undefined, slots: string[], props: string[], events: string[], uiKeys: string[]): string {
+export function renderHtml(
+  url: string,
+  tagName: string | undefined,
+  slots: string[],
+  props: string[],
+  events: string[],
+  uiKeys: string[],
+): string {
   const origin = new URL(url).origin;
   const csp = ["default-src 'none'", `frame-src ${origin}`, "style-src 'unsafe-inline'", "script-src 'unsafe-inline'"].join('; ');
 
   const propsSection = tagName
     ? renderSection(
         'props-accordion',
-        `Props — ${tagName}`,
+        `Props -`,
         [{ className: 'prop-btn', dataAttr: 'data-prop', label: (p) => `:${toKebabCase(p)}` }],
         props,
         `No props found for ${tagName}`,
@@ -20,7 +27,7 @@ export function renderHtml(url: string, tagName: string | undefined, slots: stri
   const eventsSection = tagName
     ? renderSection(
         'events-accordion',
-        `Events — ${tagName}`,
+        `Events -`,
         [{ className: 'event-btn', dataAttr: 'data-event', label: (e) => `@${toKebabCase(e)}` }],
         events,
         `No events found for ${tagName}`,
@@ -29,7 +36,7 @@ export function renderHtml(url: string, tagName: string | undefined, slots: stri
   const slotsSection = tagName
     ? renderSection(
         'slots-accordion',
-        `Slots — ${tagName}`,
+        `Slots -`,
         [{ className: 'slot-btn', dataAttr: 'data-slot', label: (s) => `#${s}` }],
         slots,
         `No slots found for ${tagName}`,
@@ -38,7 +45,7 @@ export function renderHtml(url: string, tagName: string | undefined, slots: stri
   const uiSection = tagName
     ? renderSection(
         'ui-accordion',
-        `UI — ${tagName}`,
+        `UI -`,
         [{ className: 'ui-key-btn', dataAttr: 'data-ui-key', label: (k) => k }],
         uiKeys,
         `No ui keys found for ${tagName}`,
