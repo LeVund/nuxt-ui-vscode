@@ -18,9 +18,19 @@ export interface ComponentMatch {
 }
 
 // From src/utils/typeFileResolver.ts
+export interface PropInfo {
+  name: string;
+  values: string[];
+}
+
+export interface SlotInfo {
+  name: string;
+  bindings: string[];
+}
+
 export interface ComponentInfo {
-  slots: string[];
-  props: string[];
+  slots: SlotInfo[];
+  props: PropInfo[];
   events: string[];
   uiKeys: string[];
 }

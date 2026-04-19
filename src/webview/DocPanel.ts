@@ -40,14 +40,22 @@ export class DocPanel implements vscode.WebviewViewProvider {
     };
 
     webviewView.webview.onDidReceiveMessage(
-      async (message: { command: string; slotName: string; propName: string; eventName: string; keyName: string }) => {
+      async (message: {
+        command: string;
+        slotName: string;
+        propName: string;
+        eventName: string;
+        keyName: string;
+        value?: string;
+        binding?: string;
+      }) => {
         if (!message || typeof message !== 'object') return;
         if (!this._currentContext) return;
 
         if (message.command === 'insertSlot' && typeof message.slotName === 'string') {
-          await insertSlot(this._currentContext, message.slotName);
+          await insertSlot(this._currentContext, message.slotName, message.binding);
         } else if (message.command === 'insertProp' && typeof message.propName === 'string') {
-          await insertProp(this._currentContext, message.propName);
+          await insertProp(this._currentContext, message.propName, message.value);
         } else if (message.command === 'insertEvent' && typeof message.eventName === 'string') {
           await insertEvent(this._currentContext, message.eventName);
         } else if (message.command === 'insertUiKey' && typeof message.keyName === 'string') {
