@@ -33,6 +33,7 @@
     "views": {
       "nuxtUi": [
         {
+          "icon": "resources/nuxt-ui-icon.svg",
           "type": "webview",
           "id": "nuxtUi.docView",
           "name": "Documentation"
