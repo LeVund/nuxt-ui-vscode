@@ -4,7 +4,7 @@ import { STYLES } from './styles';
 import { WEBVIEW_SCRIPT } from './webviewScript';
 import { renderSection } from './renderSection';
 
-export function renderHtml(url: string, tagName: string | undefined, slots: string[], props: string[], uiKeys: string[]): string {
+export function renderHtml(url: string, tagName: string | undefined, slots: string[], props: string[], events: string[], uiKeys: string[]): string {
   const origin = new URL(url).origin;
   const csp = ["default-src 'none'", `frame-src ${origin}`, "style-src 'unsafe-inline'", "script-src 'unsafe-inline'"].join('; ');
 
@@ -17,13 +17,13 @@ export function renderHtml(url: string, tagName: string | undefined, slots: stri
         `No props found for ${tagName}`,
       )
     : '';
-  const uiSection = tagName
+  const eventsSection = tagName
     ? renderSection(
-        'ui-accordion',
-        `UI — ${tagName}`,
-        [{ className: 'ui-key-btn', dataAttr: 'data-ui-key', label: (k) => k }],
-        uiKeys,
-        `No ui keys found for ${tagName}`,
+        'events-accordion',
+        `Events — ${tagName}`,
+        [{ className: 'event-btn', dataAttr: 'data-event', label: (e) => `@${toKebabCase(e)}` }],
+        events,
+        `No events found for ${tagName}`,
       )
     : '';
   const slotsSection = tagName
@@ -33,6 +33,15 @@ export function renderHtml(url: string, tagName: string | undefined, slots: stri
         [{ className: 'slot-btn', dataAttr: 'data-slot', label: (s) => `#${s}` }],
         slots,
         `No slots found for ${tagName}`,
+      )
+    : '';
+  const uiSection = tagName
+    ? renderSection(
+        'ui-accordion',
+        `UI — ${tagName}`,
+        [{ className: 'ui-key-btn', dataAttr: 'data-ui-key', label: (k) => k }],
+        uiKeys,
+        `No ui keys found for ${tagName}`,
       )
     : '';
 
@@ -47,8 +56,9 @@ export function renderHtml(url: string, tagName: string | undefined, slots: stri
 <body>
   <div class="layout">
     ${propsSection}
-    ${uiSection}
+    ${eventsSection}
     ${slotsSection}
+    ${uiSection}
     <div class="treeview docs-section is-open" id="docs-section">
       <div class="treeview-header" role="button" tabindex="0" data-target="docs-section">
         <span class="treeview-chevron"></span>
