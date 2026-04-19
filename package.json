@@ -21,6 +21,24 @@
     "onLanguage:vue"
   ],
   "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "nuxtUi",
+          "title": "Nuxt UI",
+          "icon": "resources/nuxt-ui-icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "nuxtUi": [
+        {
+          "type": "webview",
+          "id": "nuxtUi.docView",
+          "name": "Documentation"
+        }
+      ]
+    },
     "configuration": {
       "title": "Nuxt UI helper",
       "properties": {
@@ -34,7 +52,7 @@
           "default": "auto",
           "description": "Which Nuxt UI documentation version to display. 'auto' reads the installed @nuxt/ui version from the workspace package.json."
         },
-"nuxtUi.codeLens.enabled": {
+        "nuxtUi.codeLens.enabled": {
           "type": "boolean",
           "default": true,
           "description": "Show a CodeLens above lines containing Nuxt UI component tags."

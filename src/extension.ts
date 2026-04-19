@@ -10,6 +10,12 @@ export function activate(extensionContext: vscode.ExtensionContext): void {
 
   const panel = new DocPanel(version);
 
+  extensionContext.subscriptions.push(
+    vscode.window.registerWebviewViewProvider(DocPanel.VIEW_ID, panel, {
+      webviewOptions: { retainContextWhenHidden: true },
+    }),
+  );
+
   registerProviders(extensionContext);
   registerCommands(extensionContext, panel);
 }
