@@ -40,8 +40,9 @@ export async function readComponentInfo(declarationFilePath: string): Promise<Co
 
   let uiKeys: string[] = [];
   const uiProp = propsSymbol?.children.find((c) => c.name === 'ui');
+
   if (uiProp) {
-    uiKeys = await resolveUiKeys(uri, uiProp.selectionRange.start);
+    uiKeys = await resolveUiKeys(uri);
   }
 
   return { slots, props, uiKeys };
