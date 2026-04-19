@@ -1,7 +1,6 @@
 import * as vscode from 'vscode';
 import type { ComponentInfo } from '../core/types';
 import { resolveUiKeys } from './resolveUiKeys';
-import { log } from 'console';
 
 async function loadDocumentSymbols(uri: vscode.Uri): Promise<{ symbols: vscode.DocumentSymbol[]; text: string }> {
   let doc: vscode.TextDocument;
@@ -19,31 +18,10 @@ async function loadDocumentSymbols(uri: vscode.Uri): Promise<{ symbols: vscode.D
   }
 }
 
-/**
- * Extracts event names from `"onSomething"?:` patterns in the raw file text.
- * This catches events declared in `__VLS_export` / `__VLS_setup` props
- * that the document symbol provider doesn't expose.
- */
-function extractEventsFromText(text: string): string[] {
-  const regex = /"on([A-Z][^"]*)"[?]?\s*:/g;
-  const events: string[] = [];
-  let match: RegExpExecArray | null;
-  while ((match = regex.exec(text)) !== null) {
-    events.push(match[1]);
-  }
-  return events;
-}
-
-/**
- * Extracts slot names from the `*Slots` type/interface block in the raw file text.
- * Handles generic type aliases (e.g. `type AccordionSlots<T> = { ... }`)
- * that the document symbol provider doesn't expose children for.
- */
-function extractSlotsFromText(text: string): string[] {
-  const startMatch = text.match(/(?:interface|type)\s+\w*Slots[^{]*\{/);
+function extractTopLevelKeys(text: string, blockPattern: RegExp): string[] {
+  const startMatch = text.match(blockPattern);
   if (!startMatch || startMatch.index === undefined) return [];
 
-  // Find the matching closing brace, tracking nesting depth
   let depth = 1;
   let i = startMatch.index + startMatch[0].length;
   const blockStart = i;
@@ -54,8 +32,7 @@ function extractSlotsFromText(text: string): string[] {
   }
   const block = text.slice(blockStart, i - 1);
 
-  // Extract top-level property names only (depth 0 within the block)
-  const slots: string[] = [];
+  const keys: string[] = [];
   depth = 0;
   let lineStart = 0;
   for (let j = 0; j <= block.length; j++) {
@@ -65,22 +42,45 @@ function extractSlotsFromText(text: string): string[] {
     else if ((ch === ';' || ch === '\n' || j === block.length) && depth === 0) {
       const line = block.slice(lineStart, j).trim();
       const nameMatch = line.match(/^(\w+)\s*\??\s*[:(]/);
-      if (nameMatch) slots.push(nameMatch[1]);
+      if (nameMatch) keys.push(nameMatch[1]);
       lineStart = j + 1;
     }
   }
-  return slots;
+  return keys;
 }
 
-/**
- * Reads slots, props, and ui keys from a `.vue.d.ts` file using the VSCode
- * document symbol provider, which delegates to the active TypeScript / Volar
- * language server. No manual regex parsing of the file is required.
- *
- * - Slots  → children of the `*Slots` interface/type symbol.
- * - Props  → children of the `*Props` interface/type symbol.
- * - UI keys → children inferred from the `ui` prop type via the hover provider.
- */
+function resolveSlots(slotsSymbol: vscode.DocumentSymbol | undefined, text: string): string[] {
+  const fromSymbols = slotsSymbol?.children.map((c) => c.name) ?? [];
+  return fromSymbols.length > 0 ? fromSymbols : extractTopLevelKeys(text, /(?:interface|type)\s+\w*Slots[^{]*\{/);
+}
+
+function resolveProps(propsSymbol: vscode.DocumentSymbol | undefined): { props: string[]; hasUi: boolean; eventsFromProps: string[] } {
+  const allProps = propsSymbol?.children.map((c) => ({ ...c, name: c.name.replaceAll('"', '') })).filter((c) => c.name !== 'ui') ?? [];
+  const isEvent = (name: string) => name.startsWith('on') && name[2] !== undefined && name[2] === name[2].toUpperCase();
+
+  return {
+    props: allProps.filter((c) => !isEvent(c.name)).map((c) => c.name),
+    hasUi: propsSymbol?.children.some((c) => c.name === 'ui') ?? false,
+    eventsFromProps: allProps.filter((c) => isEvent(c.name)).map((c) => c.name.slice(2)),
+  };
+}
+
+function resolveEvents(emitsSymbol: vscode.DocumentSymbol | undefined, text: string, eventsFromProps: string[]): string[] {
+  const fromEmits = emitsSymbol?.children.map((c) => c.name.replaceAll("'", '')) ?? [];
+  const fromText = extractEventsFromText(text);
+  return [...new Set([...eventsFromProps, ...fromEmits, ...fromText])];
+}
+
+function extractEventsFromText(text: string): string[] {
+  const regex = /"on([A-Z][^"]*)"[?]?\s*:/g;
+  const events: string[] = [];
+  let match: RegExpExecArray | null;
+  while ((match = regex.exec(text)) !== null) {
+    events.push(match[1]);
+  }
+  return events;
+}
+
 export async function readComponentInfo(declarationFilePath: string): Promise<ComponentInfo> {
   const uri = vscode.Uri.file(declarationFilePath);
   const { symbols, text } = await loadDocumentSymbols(uri);
@@ -91,23 +91,10 @@ export async function readComponentInfo(declarationFilePath: string): Promise<Co
   const slotsSymbol = symbols.find((s) => s.name.endsWith('Slots'));
   const emitsSymbol = symbols.find((s) => s.name.endsWith('Emits'));
 
-  const slotsFromSymbols = slotsSymbol?.children.map((c) => c.name) ?? [];
-  const slots = slotsFromSymbols.length > 0 ? slotsFromSymbols : extractSlotsFromText(text);
-  const allProps = propsSymbol?.children.map((c) => ({ ...c, name: c.name.replaceAll('"', '') })).filter((c) => c.name !== 'ui') ?? [];
-  const isEvent = (name: string) => name.startsWith('on') && name[2] !== undefined && name[2] === name[2].toUpperCase();
-  const props = allProps.filter((c) => !isEvent(c.name)).map((c) => c.name);
-
-  const eventsFromProps = allProps.filter((c) => isEvent(c.name)).map((c) => c.name.slice(2));
-  const eventsFromEmits = emitsSymbol?.children.map((c) => c.name.replaceAll("'", '')) ?? [];
-  const eventsFromText = extractEventsFromText(text);
-  const events = [...new Set([...eventsFromProps, ...eventsFromEmits, ...eventsFromText])];
-
-  let uiKeys: string[] = [];
-  const uiProp = propsSymbol?.children.find((c) => c.name === 'ui');
-
-  if (uiProp) {
-    uiKeys = await resolveUiKeys(uri);
-  }
+  const slots = resolveSlots(slotsSymbol, text);
+  const { props, hasUi, eventsFromProps } = resolveProps(propsSymbol);
+  const events = resolveEvents(emitsSymbol, text, eventsFromProps);
+  const uiKeys = hasUi ? await resolveUiKeys(uri) : [];
 
   return { slots, props, events, uiKeys };
 }
