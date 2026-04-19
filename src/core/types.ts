@@ -13,7 +13,7 @@ export interface ComponentMatch {
   tagName: string;
   /** Range covering the `<Tag` opening delimiter (without attributes). */
   range: vscode.Range;
-  /** Position of the `<` character — useful as an inlay hint anchor. */
+  /** Position of the `<` character — useful as a CodeLens / hover anchor. */
   start: vscode.Position;
 }
 
