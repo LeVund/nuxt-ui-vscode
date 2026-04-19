@@ -6,10 +6,10 @@ export const STYLES = `
       padding: 0;
       height: 100%;
       overflow: hidden;
-      background: var(--vscode-editor-background);
-      color: var(--vscode-editor-foreground);
-      font-family: var(--vscode-font-family);
-      font-size: var(--vscode-font-size);
+      background: var(--vscode-sideBar-background, var(--vscode-editor-background));
+      color: var(--vscode-foreground);
+      font-family:  var(--vscode-font-family, -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol');
+      font-size: var(--vscode-font-size, 13px);
     }
 
     .layout {
@@ -18,97 +18,131 @@ export const STYLES = `
       height: 100vh;
     }
 
-    /* ---- Accordion shared ---- */
-    .accordion {
-      border-bottom: 1px solid var(--vscode-panel-border, #333);
+    /* ---- Treeview section ---- */
+    .treeview {
+      border-bottom: 1px solid var(--vscode-sideBarSectionHeader-border, var(--vscode-panel-border, transparent));
       flex-shrink: 0;
     }
 
-    .accordion-header {
+    .treeview-header {
       display: flex;
       align-items: center;
-      gap: 6px;
-      padding: 6px 12px;
+      gap: 4px;
+      padding: 0 12px;
+      height: 22px;
       cursor: pointer;
       user-select: none;
       font-size: 11px;
-      font-weight: 600;
+      font-weight: 700;
       text-transform: uppercase;
-      letter-spacing: 0.06em;
-      color: var(--vscode-sideBarSectionHeader-foreground, var(--vscode-editor-foreground));
+      letter-spacing: 0.04em;
+      color: var(--vscode-sideBarSectionHeader-foreground, var(--vscode-foreground));
       background: var(--vscode-sideBarSectionHeader-background, transparent);
     }
 
-    .accordion-header:hover {
-      background: var(--vscode-list-hoverBackground);
+    .treeview-header:hover {
+      background: var(--vscode-list-hoverBackground, rgba(255,255,255,0.04));
     }
 
-    .chevron {
-      font-size: 9px;
-      transition: transform 0.15s;
-      display: inline-block;
-      opacity: 0.7;
+    .treeview-header:focus-visible {
+      outline: 1px solid var(--vscode-focusBorder);
+      outline-offset: -1px;
     }
 
-    .accordion.is-open .chevron {
+    .treeview-chevron {
+      font-size: 16px;
+      line-height: 1;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 16px;
+      height: 16px;
+      transition: transform 0.1s ease;
+    }
+
+    .treeview-chevron::before {
+      content: '';
+      display: block;
+      width: 0;
+      height: 0;
+      border-left: 5px solid var(--vscode-foreground);
+      border-top: 3.5px solid transparent;
+      border-bottom: 3.5px solid transparent;
+      opacity: 0.8;
+    }
+
+    .treeview.is-open > .treeview-header .treeview-chevron {
       transform: rotate(90deg);
     }
 
-    .accordion-body {
+    .treeview-body {
       display: none;
     }
 
-    .accordion.is-open .accordion-body {
+    .treeview.is-open > .treeview-body {
       display: block;
     }
 
-    /* ---- Slots section ---- */
-    .slots-body {
-      padding: 8px 12px 10px;
+    /* ---- Tree items ---- */
+    .tree-list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+    }
+
+    .tree-item {
       display: flex;
-      flex-wrap: wrap;
-      gap: 5px;
-    }
-
-    .slot-btn {
-      background: var(--vscode-button-secondaryBackground, #3c3c3c);
-      color: var(--vscode-button-secondaryForeground, #ccc);
-      border: 1px solid transparent;
-      padding: 3px 10px;
-      border-radius: 3px;
+      align-items: center;
+      height: 22px;
+      padding: 0 12px 0 24px;
       cursor: pointer;
-      font-family: var(--vscode-editor-font-family, monospace);
-      font-size: 12px;
-      line-height: 1.6;
-      transition: background 0.1s;
+      font-family: var(--vscode-font-family, monospace);
+      font-size: 13px;
+      line-height: 22px;
+      color: var(--vscode-foreground);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
-    .slot-btn:hover {
-      background: var(--vscode-button-secondaryHoverBackground, #505050);
-      border-color: var(--vscode-focusBorder, #007fd4);
+    .tree-item:hover {
+      background: var(--vscode-list-hoverBackground, rgba(255,255,255,0.04));
     }
 
-    .slots-empty {
+    .tree-item:focus-visible {
+      outline: 1px solid var(--vscode-focusBorder);
+      outline-offset: -1px;
+    }
+
+    .tree-item:active {
+      background: var(--vscode-list-activeSelectionBackground);
+      color: var(--vscode-list-activeSelectionForeground);
+    }
+
+    .tree-empty {
+      height: 22px;
+      padding: 0 12px 0 24px;
       font-size: 12px;
-      opacity: 0.5;
+      line-height: 22px;
+      color: var(--vscode-disabledForeground, rgba(204,204,204,0.5));
       font-style: italic;
     }
 
     /* ---- Docs section ---- */
-    .accordion.docs-accordion {
+    .treeview.docs-section {
       flex: 1;
       min-height: 0;
       display: flex;
       flex-direction: column;
     }
 
-    .accordion.docs-accordion.is-open .accordion-body {
+    .treeview.docs-section.is-open > .treeview-body {
       display: flex;
       flex: 1;
       min-height: 0;
     }
 
-    .docs-body {
+    .treeview.docs-section > .treeview-body {
       flex: 1;
       overflow: hidden;
     }

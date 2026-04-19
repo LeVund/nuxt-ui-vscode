@@ -1,34 +1,41 @@
 export const WEBVIEW_SCRIPT = `
-    // Accordion toggle
-    document.querySelectorAll('.accordion-header').forEach(function(header) {
+    // Treeview toggle
+    document.querySelectorAll('.treeview-header').forEach(function(header) {
       header.addEventListener('click', function() {
         var targetId = header.dataset.target;
-        var accordion = document.getElementById(targetId);
-        if (accordion) {
-          accordion.classList.toggle('is-open');
+        var treeview = document.getElementById(targetId);
+        if (treeview) {
+          treeview.classList.toggle('is-open');
+        }
+      });
+      header.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          header.click();
         }
       });
     });
 
-    // Slot insertion
+    // Tree item click & keyboard
     var vscode = acquireVsCodeApi();
-    document.querySelectorAll('[data-slot]').forEach(function(btn) {
-      btn.addEventListener('click', function() {
-        vscode.postMessage({ command: 'insertSlot', slotName: btn.dataset.slot });
-      });
-    });
 
-    // Prop insertion
-    document.querySelectorAll('[data-prop]').forEach(function(btn) {
-      btn.addEventListener('click', function() {
-        vscode.postMessage({ command: 'insertProp', propName: btn.dataset.prop });
-      });
-    });
+    function handleTreeItem(item) {
+      if (item.dataset.slot) {
+        vscode.postMessage({ command: 'insertSlot', slotName: item.dataset.slot });
+      } else if (item.dataset.prop) {
+        vscode.postMessage({ command: 'insertProp', propName: item.dataset.prop });
+      } else if (item.dataset.uiKey) {
+        vscode.postMessage({ command: 'insertUiKey', keyName: item.dataset.uiKey });
+      }
+    }
 
-    // UI key insertion
-    document.querySelectorAll('[data-ui-key]').forEach(function(btn) {
-      btn.addEventListener('click', function() {
-        vscode.postMessage({ command: 'insertUiKey', keyName: btn.dataset.uiKey });
+    document.querySelectorAll('.tree-item').forEach(function(item) {
+      item.addEventListener('click', function() { handleTreeItem(item); });
+      item.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          handleTreeItem(item);
+        }
       });
     });
 `;
