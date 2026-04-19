@@ -26,5 +26,6 @@ export function renderSection(
       <div class="treeview-body" role="tree">
         ${body}
       </div>
+      <div class="resize-handle" data-resize="${id}"></div>
     </div>`;
 }

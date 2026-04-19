@@ -24,6 +24,13 @@ export const STYLES = `
       flex-shrink: 0;
     }
 
+    .treeview.is-open:not(.docs-section) {
+      display: flex;
+      flex-direction: column;
+      height: var(--section-height, 132px);
+      min-height: 44px;
+    }
+
     .treeview-header {
       display: flex;
       align-items: center;
@@ -87,6 +94,9 @@ export const STYLES = `
 
     .treeview.is-open > .treeview-body {
       display: block;
+      overflow-y: auto;
+      flex: 1;
+      min-height: 0;
     }
 
     /* ---- Tree items ---- */
@@ -132,6 +142,21 @@ export const STYLES = `
       line-height: 22px;
       color: var(--vscode-disabledForeground, rgba(204,204,204,0.5));
       font-style: italic;
+    }
+
+    /* ---- Resize handle ---- */
+    .resize-handle {
+      height: 4px;
+      cursor: row-resize;
+      flex-shrink: 0;
+      position: relative;
+      z-index: 1;
+      margin: -2px 0;
+    }
+
+    .resize-handle:hover,
+    .resize-handle.is-dragging {
+      background: var(--vscode-sash-hoverBorder, var(--vscode-focusBorder));
     }
 
     /* ---- Docs section ---- */

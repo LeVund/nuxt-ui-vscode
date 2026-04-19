@@ -40,4 +40,41 @@ export const WEBVIEW_SCRIPT = `
         }
       });
     });
+
+    // Resize handles
+    document.querySelectorAll('.resize-handle').forEach(function(handle) {
+      var targetId = handle.dataset.resize;
+      var section = document.getElementById(targetId);
+      if (!section) return;
+
+      handle.addEventListener('mousedown', function(e) {
+        e.preventDefault();
+        handle.classList.add('is-dragging');
+        var startY = e.clientY;
+        var startHeight = section.offsetHeight;
+
+        var header = section.querySelector('.treeview-header');
+        var body = section.querySelector('.treeview-body');
+        var maxHeight = (header ? header.offsetHeight : 22) + (body ? body.scrollHeight : 0);
+
+        function onMouseMove(e) {
+          var newHeight = startHeight + (e.clientY - startY);
+          if (newHeight < 44) newHeight = 44;
+          if (newHeight > maxHeight) newHeight = maxHeight;
+          section.style.setProperty('--section-height', newHeight + 'px');
+        }
+
+        function stop() {
+          handle.classList.remove('is-dragging');
+          document.removeEventListener('mousemove', onMouseMove);
+          document.removeEventListener('mouseup', stop);
+          document.documentElement.removeEventListener('mouseleave', stop);
+        }
+
+        document.addEventListener('mousemove', onMouseMove);
+        document.addEventListener('mouseup', stop);
+        document.documentElement.removeEventListener('mouseleave', stop);
+        document.documentElement.addEventListener('mouseleave', stop);
+      });
+    });
 `;
