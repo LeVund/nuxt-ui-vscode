@@ -30,13 +30,15 @@ export async function readComponentInfo(declarationFilePath: string): Promise<Co
   const uri = vscode.Uri.file(declarationFilePath);
   const symbols = await loadDocumentSymbols(uri);
 
-  if (symbols.length === 0) return { slots: [], props: [], uiKeys: [] };
+  if (symbols.length === 0) return { slots: [], props: [], events: [], uiKeys: [] };
 
   const propsSymbol = symbols.find((s) => s.name.endsWith('Props'));
   const slotsSymbol = symbols.find((s) => s.name.endsWith('Slots'));
 
   const slots = slotsSymbol?.children.map((c) => c.name) ?? [];
-  const props = propsSymbol?.children.flatMap((c) => (c.name !== 'ui' ? c.name : [])) ?? [];
+  const allProps = propsSymbol?.children.filter((c) => c.name !== 'ui') ?? [];
+  const props = allProps.filter((c) => !c.name.startsWith('on')).map((c) => c.name);
+  const events = allProps.filter((c) => c.name.startsWith('on')).map((c) => c.name.slice(2));
 
   let uiKeys: string[] = [];
   const uiProp = propsSymbol?.children.find((c) => c.name === 'ui');
@@ -45,5 +47,5 @@ export async function readComponentInfo(declarationFilePath: string): Promise<Co
     uiKeys = await resolveUiKeys(uri);
   }
 
-  return { slots, props, uiKeys };
+  return { slots, props, events, uiKeys };
 }

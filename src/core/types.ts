@@ -21,6 +21,7 @@ export interface ComponentMatch {
 export interface ComponentInfo {
   slots: string[];
   props: string[];
+  events: string[];
   uiKeys: string[];
 }
 
