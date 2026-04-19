@@ -21,6 +21,46 @@
     "onLanguage:vue"
   ],
   "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "nuxtUi",
+          "title": "Nuxt UI",
+          "icon": "$(symbol-component)"
+        }
+      ]
+    },
+    "views": {
+      "nuxtUi": [
+        {
+          "id": "nuxtUi.componentTree",
+          "name": "Component",
+          "type": "tree"
+        },
+        {
+          "id": "nuxtUi.docWebview",
+          "name": "Documentation",
+          "type": "webview"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "nuxtUiHelper.insertSlot",
+        "title": "Insert Slot",
+        "icon": "$(add)"
+      },
+      {
+        "command": "nuxtUiHelper.insertProp",
+        "title": "Insert Prop",
+        "icon": "$(add)"
+      },
+      {
+        "command": "nuxtUiHelper.insertUiKey",
+        "title": "Insert UI Key",
+        "icon": "$(add)"
+      }
+    ],
     "configuration": {
       "title": "Nuxt UI helper",
       "properties": {
@@ -34,7 +74,7 @@
           "default": "auto",
           "description": "Which Nuxt UI documentation version to display. 'auto' reads the installed @nuxt/ui version from the workspace package.json."
         },
-"nuxtUi.codeLens.enabled": {
+        "nuxtUi.codeLens.enabled": {
           "type": "boolean",
           "default": true,
           "description": "Show a CodeLens above lines containing Nuxt UI component tags."
