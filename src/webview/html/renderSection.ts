@@ -9,21 +9,21 @@ export function renderSection(
 ): string {
   const body =
     values.length > 0
-      ? values
+      ? `<ul class="tree-list">${values
           .map(
             (v) =>
-              `<button class="${items[0].className} slot-btn" ${items[0].dataAttr}="${escapeAttr(v)}">${escapeHtml(items[0].label(v))}</button>`,
+              `<li class="tree-item" role="treeitem" tabindex="0" ${items[0].dataAttr}="${escapeAttr(v)}">${escapeHtml(items[0].label(v))}</li>`,
           )
-          .join('\n        ')
-      : `<span class="slots-empty">${escapeHtml(emptyLabel)}</span>`;
+          .join('\n')}</ul>`
+      : `<div class="tree-empty">${escapeHtml(emptyLabel)}</div>`;
 
   return /* html */ `
-    <div class="accordion is-open" id="${id}">
-      <div class="accordion-header" data-target="${id}">
-        <span class="chevron">▶</span>
+    <div class="treeview is-open" id="${id}">
+      <div class="treeview-header" role="button" tabindex="0" data-target="${id}">
+        <span class="treeview-chevron"></span>
         ${escapeHtml(title)}
       </div>
-      <div class="accordion-body slots-body">
+      <div class="treeview-body" role="tree">
         ${body}
       </div>
     </div>`;

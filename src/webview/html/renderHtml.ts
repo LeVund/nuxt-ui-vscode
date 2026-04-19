@@ -49,12 +49,12 @@ export function renderHtml(url: string, tagName: string | undefined, slots: stri
     ${propsSection}
     ${uiSection}
     ${slotsSection}
-    <div class="accordion docs-accordion is-open" id="docs-accordion">
-      <div class="accordion-header" data-target="docs-accordion">
-        <span class="chevron">▶</span>
+    <div class="treeview docs-section is-open" id="docs-section">
+      <div class="treeview-header" role="button" tabindex="0" data-target="docs-section">
+        <span class="treeview-chevron"></span>
         Documentation
       </div>
-      <div class="accordion-body docs-body">
+      <div class="treeview-body">
         <iframe src="${escapeAttr(url)}" allow="clipboard-read; clipboard-write"></iframe>
       </div>
     </div>
