@@ -1,26 +1,33 @@
 import { toKebabCase } from '../../parsing/caseUtils';
+import type { PropInfo, SlotInfo } from '../../core/types';
 import { escapeAttr } from './escape';
 import { STYLES } from './styles';
 import { WEBVIEW_SCRIPT } from './webviewScript';
 import { renderSection } from './renderSection';
+import type { TreeItem } from './renderSection';
 
 export function renderHtml(
   url: string,
   tagName: string | undefined,
-  slots: string[],
-  props: string[],
+  slots: SlotInfo[],
+  props: PropInfo[],
   events: string[],
   uiKeys: string[],
 ): string {
   const origin = new URL(url).origin;
   const csp = ["default-src 'none'", `frame-src ${origin}`, "style-src 'unsafe-inline'", "script-src 'unsafe-inline'"].join('; ');
 
+  const propItems: TreeItem[] = props.map((p) => ({ name: p.name, children: p.values }));
+  const slotItems: TreeItem[] = slots.map((s) => ({ name: s.name, children: s.bindings }));
+  const eventItems: TreeItem[] = events.map((e) => ({ name: e }));
+  const uiItems: TreeItem[] = uiKeys.map((k) => ({ name: k }));
+
   const propsSection = tagName
     ? renderSection(
         'props-accordion',
         `Props -`,
         [{ className: 'prop-btn', dataAttr: 'data-prop', label: (p) => `:${toKebabCase(p)}` }],
-        props,
+        propItems,
         `No props found for ${tagName}`,
       )
     : '';
@@ -29,7 +36,7 @@ export function renderHtml(
         'events-accordion',
         `Events -`,
         [{ className: 'event-btn', dataAttr: 'data-event', label: (e) => `@${toKebabCase(e)}` }],
-        events,
+        eventItems,
         `No events found for ${tagName}`,
       )
     : '';
@@ -38,7 +45,7 @@ export function renderHtml(
         'slots-accordion',
         `Slots -`,
         [{ className: 'slot-btn', dataAttr: 'data-slot', label: (s) => `#${s}` }],
-        slots,
+        slotItems,
         `No slots found for ${tagName}`,
       )
     : '';
@@ -47,7 +54,7 @@ export function renderHtml(
         'ui-accordion',
         `UI -`,
         [{ className: 'ui-key-btn', dataAttr: 'data-ui-key', label: (k) => k }],
-        uiKeys,
+        uiItems,
         `No ui keys found for ${tagName}`,
       )
     : '';

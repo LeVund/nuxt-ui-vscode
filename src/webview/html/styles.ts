@@ -144,6 +144,80 @@ export const STYLES = `
       font-style: italic;
     }
 
+    /* ---- Nested tree groups (sub-accordion) ---- */
+    .tree-group {
+      list-style: none;
+    }
+
+    .tree-group-header {
+      display: flex;
+      align-items: center;
+      height: 22px;
+      padding: 0 12px 0 24px;
+      cursor: pointer;
+      font-family: var(--vscode-font-family, monospace);
+      font-size: 13px;
+      line-height: 22px;
+      color: var(--vscode-foreground);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      user-select: none;
+    }
+
+    .tree-group-header:hover {
+      background: var(--vscode-list-hoverBackground, rgba(255,255,255,0.04));
+    }
+
+    .tree-group-header:focus-visible {
+      outline: 1px solid var(--vscode-focusBorder);
+      outline-offset: -1px;
+    }
+
+    .tree-group-chevron {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 16px;
+      height: 16px;
+      margin-right: 2px;
+      flex-shrink: 0;
+      transition: transform 0.1s ease;
+    }
+
+    .tree-group-chevron::before {
+      content: '';
+      display: block;
+      width: 0;
+      height: 0;
+      border-left: 4px solid var(--vscode-foreground);
+      border-top: 3px solid transparent;
+      border-bottom: 3px solid transparent;
+      opacity: 0.6;
+    }
+
+    .tree-group.is-open > .tree-group-header .tree-group-chevron {
+      transform: rotate(90deg);
+    }
+
+    .tree-sub-list {
+      display: none;
+      list-style: none;
+      margin: 0;
+      padding: 0;
+    }
+
+    .tree-group.is-open > .tree-sub-list {
+      display: block;
+    }
+
+    .tree-sub-item {
+      padding-left: 44px;
+      font-size: 12px;
+      color: var(--vscode-descriptionForeground, rgba(204,204,204,0.7));
+      cursor: default;
+    }
+
     /* ---- Resize handle ---- */
     .resize-handle {
       height: 4px;

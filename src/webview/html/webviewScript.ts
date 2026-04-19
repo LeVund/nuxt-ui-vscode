@@ -16,6 +16,24 @@ export const WEBVIEW_SCRIPT = `
       });
     });
 
+    // Sub-tree (nested accordion) toggle
+    document.querySelectorAll('.tree-group-header').forEach(function(header) {
+      header.addEventListener('click', function(e) {
+        e.stopPropagation();
+        var subId = header.dataset.subtree;
+        var subList = document.getElementById(subId);
+        if (subList) {
+          header.parentElement.classList.toggle('is-open');
+        }
+      });
+      header.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          header.click();
+        }
+      });
+    });
+
     // Tree item click & keyboard
     var vscode = acquireVsCodeApi();
 
@@ -39,6 +57,11 @@ export const WEBVIEW_SCRIPT = `
           handleTreeItem(item);
         }
       });
+    });
+
+    // Tree group header click (insert action)
+    document.querySelectorAll('.tree-group-header').forEach(function(header) {
+      header.addEventListener('dblclick', function() { handleTreeItem(header); });
     });
 
     // Resize handles
