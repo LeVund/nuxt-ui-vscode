@@ -21,32 +21,6 @@
     "onLanguage:vue"
   ],
   "contributes": {
-    "commands": [
-      {
-        "command": "nuxtUiHelper.openHome",
-        "title": "Nuxt UI helper: Open Documentation Home"
-      },
-      {
-        "command": "nuxtUiHelper.openComponent",
-        "title": "Nuxt UI helper: Open Component Docs..."
-      },
-      {
-        "command": "nuxtUiHelper.showComponentMenu",
-        "title": "Nuxt UI helper: Show Component Actions"
-      },
-      {
-        "command": "nuxtUiHelper.openComponentWithoutContext",
-        "title": "Nuxt UI helper: Open Component without Context (for testing)"
-      }
-    ],
-    "menus": {
-      "commandPalette": [
-        {
-          "command": "nuxtUiHelper.showComponentMenu",
-          "when": "false"
-        }
-      ]
-    },
     "configuration": {
       "title": "Nuxt UI helper",
       "properties": {

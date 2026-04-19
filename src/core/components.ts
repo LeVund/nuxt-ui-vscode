@@ -3,7 +3,6 @@
  *
  * This list is used for:
  *  - Fuzzy-matching component tags inside .vue files
- *  - Populating the "Open Component Docs..." QuickPick
  *  - Building documentation URLs
  *
  * If a component is missing, add it here. The list does not need to be

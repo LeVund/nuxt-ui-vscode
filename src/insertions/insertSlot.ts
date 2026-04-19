@@ -16,7 +16,7 @@ function fromSelfClosingToDoubleTag(
 
   const slashGtPos = document.positionAt(tag.openTagEnd - 2);
   const afterGtPos = document.positionAt(tag.openTagEnd);
-  const replacement = `>n${indentation}</${tagName}>`;
+  const replacement = `>${indentation}</${tagName}>`;
 
   edit.replace(document.uri, new vscode.Range(slashGtPos, afterGtPos), replacement);
   return edit;
@@ -47,7 +47,7 @@ function getPairedTagEdit(
 
   const edit = new vscode.WorkspaceEdit();
   const insertPos = document.positionAt(closingTagIdx);
-  const insertion = `${slotIndent}<template #${slotName}>\n${slotIndent}</template>\n${indentation}`;
+  const insertion = `\n${slotIndent}<template #${slotName}></template>\n${indentation}`;
 
   edit.insert(document.uri, insertPos, insertion);
   return edit;
