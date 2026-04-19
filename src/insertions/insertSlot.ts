@@ -20,20 +20,18 @@ function fromSelfClosingToDoubleTag(
   return edit;
 }
 
-function buildInsertSlotEdit(
-  document: vscode.TextDocument,
-  closingTagIdx: number,
+function buildInsertSlotSnippet(
   slotName: string,
   binding: string | undefined,
   indentation: string,
   slotIndent: string,
-): vscode.WorkspaceEdit {
+): vscode.SnippetString {
   const destructure = binding ? `="{ ${binding} }"` : '';
-  const insertion = `\n${slotIndent}<template #${slotName}${destructure}></template>\n${indentation}`;
-
-  const edit = new vscode.WorkspaceEdit();
-  edit.insert(document.uri, document.positionAt(closingTagIdx), insertion);
-  return edit;
+  const snippet = new vscode.SnippetString();
+  snippet.appendText(`\n${slotIndent}<template #${slotName}${destructure}>`);
+  snippet.appendTabstop(0);
+  snippet.appendText(`</template>\n${indentation}`);
+  return snippet;
 }
 
 function buildAddBindingEdit(
@@ -82,6 +80,7 @@ export async function insertSlot(
   const tagLine = document.positionAt(tagOffset).line;
   const indentation = getLineIndentation(document, tagLine);
   const slotIndent = indentation + '  ';
+  const editor = await vscode.window.showTextDocument(document);
 
   if (tag.selfClosing) {
     await vscode.workspace.applyEdit(fromSelfClosingToDoubleTag(document, tag, tagName, indentation));
@@ -101,7 +100,8 @@ export async function insertSlot(
   const slotMatch = slotRegex.exec(innerContent);
 
   if (!slotMatch) {
-    await vscode.workspace.applyEdit(buildInsertSlotEdit(document, closingTagIdx, slotName, binding, indentation, slotIndent));
+    const snippet = buildInsertSlotSnippet(slotName, binding, indentation, slotIndent);
+    await editor.insertSnippet(snippet, document.positionAt(closingTagIdx));
     return;
   }
 

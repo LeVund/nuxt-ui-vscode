@@ -24,7 +24,11 @@ export async function insertEvent({ tagOffset, tagName, ...ctx }: ComponentTagFi
   const charBefore = tag.closeCharIdx > 0 ? text[tag.closeCharIdx - 1] : '';
   const spacing = charBefore === ' ' || charBefore === '\t' ? '' : ' ';
 
-  const edit = new vscode.WorkspaceEdit();
-  edit.insert(document.uri, document.positionAt(tag.closeCharIdx), `${spacing}@${attrName}="($event) => {}"`);
-  await vscode.workspace.applyEdit(edit);
+  const editor = await vscode.window.showTextDocument(document);
+  const snippet = new vscode.SnippetString();
+  snippet.appendText(`${spacing}@${attrName}="($event) => {`);
+  snippet.appendTabstop(0);
+  snippet.appendText('}"');
+
+  await editor.insertSnippet(snippet, document.positionAt(tag.closeCharIdx));
 }

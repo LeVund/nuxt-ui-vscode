@@ -23,25 +23,17 @@ function parseUiObject(
   return { attrValue: text.slice(attrValueStart, closingQuotePos), closingQuotePos };
 }
 
-function buildNewUiAttributeEdit(
-  document: vscode.TextDocument,
-  text: string,
-  closeCharIdx: number,
-  keyName: string,
-): vscode.WorkspaceEdit {
+function buildNewUiAttributeSnippet(text: string, closeCharIdx: number, keyName: string): vscode.SnippetString {
   const charBefore = closeCharIdx > 0 ? text[closeCharIdx - 1] : '';
   const prefix = charBefore === ' ' || charBefore === '\t' ? '' : ' ';
-  const edit = new vscode.WorkspaceEdit();
-  edit.insert(document.uri, document.positionAt(closeCharIdx), `${prefix}:ui="{}"`);
-  return edit;
+  const snippet = new vscode.SnippetString();
+  snippet.appendText(`${prefix}:ui="{ ${keyName}: '`);
+  snippet.appendTabstop(0);
+  snippet.appendText(`' }"`);
+  return snippet;
 }
 
-function buildAppendKeyEdit(
-  document: vscode.TextDocument,
-  attrValueStart: number,
-  attrValue: string,
-  keyName: string,
-): vscode.WorkspaceEdit | undefined {
+function buildAppendKeySnippet(attrValue: string, keyName: string): vscode.SnippetString | undefined {
   const lastBrace = attrValue.lastIndexOf('}');
   if (lastBrace === -1) return undefined;
 
@@ -49,11 +41,13 @@ function buildAppendKeyEdit(
     .slice(0, lastBrace)
     .replace(/^\s*\{/, '')
     .trim();
-  const insertion = innerContent.length > 0 ? `, ${keyName}: ''` : `${keyName}: ''`;
+  const separator = innerContent.length > 0 ? ', ' : '';
 
-  const edit = new vscode.WorkspaceEdit();
-  edit.insert(document.uri, document.positionAt(attrValueStart + lastBrace), insertion);
-  return edit;
+  const snippet = new vscode.SnippetString();
+  snippet.appendText(`${separator}${keyName}: '`);
+  snippet.appendTabstop(0);
+  snippet.appendText(`'`);
+  return snippet;
 }
 
 export async function insertUiKey({ tagOffset, tagName, ...ctx }: ComponentTagFileContext, keyName: string): Promise<void> {
@@ -61,12 +55,15 @@ export async function insertUiKey({ tagOffset, tagName, ...ctx }: ComponentTagFi
   if (!parsed) return;
   const { document, text, tag } = parsed;
 
-  if (!findUiAttribute(text, tagOffset, tag.closeCharIdx)) {
-    const edit = buildNewUiAttributeEdit(document, text, tag.closeCharIdx, keyName);
-    await vscode.workspace.applyEdit(edit);
+  const editor = await vscode.window.showTextDocument(document);
+  const uiAttrMatch = findUiAttribute(text, tagOffset, tag.closeCharIdx);
+
+  if (!uiAttrMatch) {
+    const snippet = buildNewUiAttributeSnippet(text, tag.closeCharIdx, keyName);
+    await editor.insertSnippet(snippet, document.positionAt(tag.closeCharIdx));
+    return;
   }
 
-  const uiAttrMatch = findUiAttribute(text, tagOffset, tag.closeCharIdx)!;
   const quoteChar = uiAttrMatch[1];
   const attrValueStart = tagOffset + uiAttrMatch.index + uiAttrMatch[0].length;
 
@@ -83,11 +80,17 @@ export async function insertUiKey({ tagOffset, tagName, ...ctx }: ComponentTagFi
     return;
   }
 
-  const edit = buildAppendKeyEdit(document, attrValueStart, attrValue, keyName);
-  if (!edit) {
+  const lastBrace = attrValue.lastIndexOf('}');
+  if (lastBrace === -1) {
     void vscode.window.showWarningMessage(`Could not locate the :ui object for <${tagName}>.`);
     return;
   }
 
-  await vscode.workspace.applyEdit(edit);
+  const snippet = buildAppendKeySnippet(attrValue, keyName);
+  if (!snippet) {
+    void vscode.window.showWarningMessage(`Could not locate the :ui object for <${tagName}>.`);
+    return;
+  }
+
+  await editor.insertSnippet(snippet, document.positionAt(attrValueStart + lastBrace));
 }

@@ -30,6 +30,7 @@ export async function insertProp(
 
   const attrName = toKebabCase(propName);
   const openTagText = text.slice(tagOffset, tag.closeCharIdx + (tag.selfClosing ? 2 : 1));
+  const editor = await vscode.window.showTextDocument(document);
 
   if (isPropsAlreadyPresent(openTagText, attrName)) {
     if (!value) {
@@ -41,20 +42,28 @@ export async function insertProp(
       void vscode.window.showWarningMessage(`Could not locate the "${attrName}" value on <${tagName}>.`);
       return;
     }
-    const edit = new vscode.WorkspaceEdit();
     const start = document.positionAt(tagOffset + range.start);
     const end = document.positionAt(tagOffset + range.end);
-    edit.replace(document.uri, new vscode.Range(start, end), value);
-    await vscode.workspace.applyEdit(edit);
+    const snippet = new vscode.SnippetString();
+    snippet.appendText(value);
+    snippet.appendTabstop(0);
+    await editor.insertSnippet(snippet, new vscode.Range(start, end));
     return;
   }
 
   const charBefore = tag.closeCharIdx > 0 ? text[tag.closeCharIdx - 1] : '';
   const spacing = charBefore === ' ' || charBefore === '\t' ? '' : ' ';
 
-  const insertion = value ? `${spacing}${attrName}="${value}"` : `${spacing}:${attrName}=""`;
-
-  const edit = new vscode.WorkspaceEdit();
-  edit.insert(document.uri, document.positionAt(tag.closeCharIdx), insertion);
-  await vscode.workspace.applyEdit(edit);
+  const snippet = new vscode.SnippetString();
+  if (value) {
+    snippet.appendText(`${spacing}${attrName}="`);
+    snippet.appendText(value);
+    snippet.appendTabstop(0);
+    snippet.appendText('"');
+  } else {
+    snippet.appendText(`${spacing}:${attrName}="`);
+    snippet.appendTabstop(0);
+    snippet.appendText('"');
+  }
+  await editor.insertSnippet(snippet, document.positionAt(tag.closeCharIdx));
 }
