@@ -19,6 +19,20 @@ function findPropValueRange(openTagText: string, attrName: string): { start: num
   return { start, end };
 }
 
+function findLastVModelEnd(openTagText: string): number | undefined {
+  const regex = /\bv-model(?::[a-zA-Z0-9-]+)?(?:\.[a-zA-Z0-9-]+)*\s*=\s*(["'])/g;
+  let lastEnd: number | undefined;
+  let match: RegExpExecArray | null;
+  while ((match = regex.exec(openTagText)) !== null) {
+    const quote = match[1];
+    const valueStart = match.index + match[0].length;
+    const valueEnd = openTagText.indexOf(quote, valueStart);
+    if (valueEnd === -1) break;
+    lastEnd = valueEnd + 1;
+  }
+  return lastEnd;
+}
+
 export async function insertProp(
   { tagOffset, tagName, ...ctx }: ComponentTagFileContext,
   propName: string,
@@ -51,19 +65,21 @@ export async function insertProp(
     return;
   }
 
-  const charBefore = tag.closeCharIdx > 0 ? text[tag.closeCharIdx - 1] : '';
-  const spacing = charBefore === ' ' || charBefore === '\t' ? '' : ' ';
+  const lastVModelEnd = findLastVModelEnd(openTagText);
+  const insertPos = lastVModelEnd !== undefined ? tagOffset + lastVModelEnd : tagOffset + 1 + tagName.length;
+  const charAfter = insertPos < text.length ? text[insertPos] : '';
+  const trailingSpace = charAfter === '/' ? ' ' : '';
 
   const snippet = new vscode.SnippetString();
   if (value) {
-    snippet.appendText(`${spacing}${attrName}="`);
+    snippet.appendText(` ${attrName}="`);
     snippet.appendText(value);
     snippet.appendTabstop(0);
-    snippet.appendText('"');
+    snippet.appendText(`"${trailingSpace}`);
   } else {
-    snippet.appendText(`${spacing}:${attrName}="`);
+    snippet.appendText(` :${attrName}="`);
     snippet.appendTabstop(0);
-    snippet.appendText('"');
+    snippet.appendText(`"${trailingSpace}`);
   }
-  await editor.insertSnippet(snippet, document.positionAt(tag.closeCharIdx));
+  await editor.insertSnippet(snippet, document.positionAt(insertPos));
 }
