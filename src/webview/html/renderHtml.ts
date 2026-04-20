@@ -1,10 +1,11 @@
 import { toKebabCase } from '../../parsing/caseUtils';
-import type { PropInfo, SlotInfo } from '../../core/types';
+import type { PropInfo, SlotInfo, VModelInfo } from '../../core/types';
 import { escapeAttr } from './escape';
 import { STYLES } from './styles';
 import { WEBVIEW_SCRIPT } from './webviewScript';
 import { renderSection } from './renderSection';
 import type { TreeItem } from './renderSection';
+import { renderVModelsSection } from './renderVModelsSection';
 
 export function renderHtml(
   url: string,
@@ -12,6 +13,7 @@ export function renderHtml(
   slots: SlotInfo[],
   props: PropInfo[],
   events: string[],
+  vModels: VModelInfo[],
   uiKeys: string[],
 ): string {
   const origin = new URL(url).origin;
@@ -22,6 +24,7 @@ export function renderHtml(
   const eventItems: TreeItem[] = events.map((e) => ({ name: e }));
   const uiItems: TreeItem[] = uiKeys.map((k) => ({ name: k }));
 
+  const vModelsSection = tagName ? renderVModelsSection(vModels, tagName) : '';
   const propsSection = tagName
     ? renderSection(
         'props-accordion',
@@ -69,6 +72,7 @@ export function renderHtml(
 </head>
 <body>
   <div class="layout">
+    ${vModelsSection}
     ${propsSection}
     ${eventsSection}
     ${slotsSection}

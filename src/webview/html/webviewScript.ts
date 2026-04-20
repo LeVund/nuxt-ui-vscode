@@ -39,7 +39,9 @@ export const WEBVIEW_SCRIPT = `
 
     function handleTreeItem(item) {
       var value = item.dataset.value;
-      if (item.dataset.slot) {
+      if (item.dataset.vmodel) {
+        vscode.postMessage({ command: 'insertVModel', propName: item.dataset.vmodel });
+      } else if (item.dataset.slot) {
         vscode.postMessage({ command: 'insertSlot', slotName: item.dataset.slot, binding: value });
       } else if (item.dataset.prop) {
         vscode.postMessage({ command: 'insertProp', propName: item.dataset.prop, value: value });

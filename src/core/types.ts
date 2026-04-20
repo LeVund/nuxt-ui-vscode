@@ -28,10 +28,16 @@ export interface SlotInfo {
   bindings: string[];
 }
 
+export interface VModelInfo {
+  /** Prop name in original casing (e.g. `modelValue`, `pageCount`). */
+  name: string;
+}
+
 export interface ComponentInfo {
   slots: SlotInfo[];
   props: PropInfo[];
   events: string[];
+  vModels: VModelInfo[];
   uiKeys: string[];
 }
 

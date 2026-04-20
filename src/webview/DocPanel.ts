@@ -10,6 +10,7 @@ import { insertSlot } from '../insertions/insertSlot';
 import { insertProp } from '../insertions/insertProp';
 import { insertUiKey } from '../insertions/insertUiKey';
 import { insertEvent } from '../insertions/insertEvent';
+import { insertVModel } from '../insertions/insertVModel';
 
 export class DocPanel implements vscode.WebviewViewProvider {
   public static readonly VIEW_ID = 'nuxtUi.docView';
@@ -58,6 +59,8 @@ export class DocPanel implements vscode.WebviewViewProvider {
           await insertProp(this._currentContext, message.propName, message.value);
         } else if (message.command === 'insertEvent' && typeof message.eventName === 'string') {
           await insertEvent(this._currentContext, message.eventName);
+        } else if (message.command === 'insertVModel' && typeof message.propName === 'string') {
+          await insertVModel(this._currentContext, message.propName);
         } else if (message.command === 'insertUiKey' && typeof message.keyName === 'string') {
           await insertUiKey(this._currentContext, message.keyName);
         }
@@ -88,11 +91,11 @@ export class DocPanel implements vscode.WebviewViewProvider {
     if (!this.view) return;
 
     const nuxtUiWebSiteUrl = `${this.version.current.baseUrl}${componentPath(this.version.current.version, tagToSlug(this.currentContext.tagName))}`;
-    const { slots, props, events, uiKeys } = await resolveComponentInfo(this.currentContext);
+    const { slots, props, events, vModels, uiKeys } = await resolveComponentInfo(this.currentContext);
 
     const { tagName } = this.currentContext;
 
     this.view.title = `Nuxt UI — ${tagName}`;
-    this.view.webview.html = renderHtml(nuxtUiWebSiteUrl, tagName, slots, props, events, uiKeys);
+    this.view.webview.html = renderHtml(nuxtUiWebSiteUrl, tagName, slots, props, events, vModels, uiKeys);
   }
 }
