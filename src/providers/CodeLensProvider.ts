@@ -4,7 +4,7 @@ import { scanComponents } from '../parsing/scanComponents';
 
 /**
  * Shows a CodeLens above each line that contains a Nuxt UI component tag.
- * Clicking it runs `nuxtUiHelper.openDocPanel` with the tag context.
+ * Clicking it runs `nuxtUiCodeLens.openDocPanel` with the tag context.
  *
  * When a line contains multiple Nuxt UI tags, one CodeLens per tag is shown.
  */
@@ -18,7 +18,7 @@ export class NuxtUiCodeLensProvider implements vscode.CodeLensProvider {
   }
 
   provideCodeLenses(document: vscode.TextDocument): vscode.CodeLens[] {
-    const enabled = vscode.workspace.getConfiguration('nuxtUi').get<boolean>('codeLens.enabled', true);
+    const enabled = vscode.workspace.getConfiguration('nuxtUiCodeLens').get<boolean>('codeLens.enabled', true);
     if (!enabled) {
       return [];
     }

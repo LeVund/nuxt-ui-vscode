@@ -15,7 +15,7 @@ const DEFAULT_INFO: VersionInfo = {
  * Tracks the Nuxt UI version in use for the current workspace.
  *
  * Resolution order:
- *   1. Setting `nuxtUi.version` if set to `v3` or `v4`
+ *   1. Setting `nuxtUiCodeLens.version` if set to `v3` or `v4`
  *   2. `@nuxt/ui` version declared in the nearest workspace package.json
  *   3. Default: v4 (latest)
  *
@@ -39,7 +39,7 @@ export class VersionService implements vscode.Disposable {
     // Watch the setting
     vscode.workspace.onDidChangeConfiguration(
       (e) => {
-        if (e.affectsConfiguration('nuxtUi.version')) {
+        if (e.affectsConfiguration('nuxtUiCodeLens.version')) {
           void this.refresh();
         }
       },
@@ -68,7 +68,7 @@ export class VersionService implements vscode.Disposable {
 
   private async resolve(): Promise<VersionInfo> {
     const configured = vscode.workspace
-      .getConfiguration('nuxtUi')
+      .getConfiguration('nuxtUiCodeLens')
       .get<string>('version', 'auto');
 
     if (configured === 'v3') {

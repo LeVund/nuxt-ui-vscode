@@ -1,4 +1,4 @@
-# Nuxt UI — VS Code Extension
+# Nuxt UI Code Lens
 
 Browse and navigate the [Nuxt UI](https://ui.nuxt.com) documentation directly inside VS Code.
 
@@ -21,9 +21,8 @@ Browse and navigate the [Nuxt UI](https://ui.nuxt.com) documentation directly in
 
 | Setting | Default | Description |
 |---|---|---|
-| `nuxtUi.version` | `auto` | Force `v3`, `v4`, or let the extension detect from `package.json` |
-| `nuxtUi.inlayHints.enabled` | `true` | Show the `⚡` inlay hint next to component tags |
-| `nuxtUi.hover.enabled` | `true` | Show the hover tooltip on component tags |
+| `nuxtUiCodeLens.version` | `auto` | Force `v3`, `v4`, or let the extension detect from `package.json` |
+| `nuxtUiCodeLens.codeLens.enabled` | `true` | Show the CodeLens above Nuxt UI component tags |
 
 ---
 
@@ -42,7 +41,7 @@ bun install
 
 ### Run the extension locally
 
-1. Open the `nuxt-ui-vscode` folder in VS Code
+1. Open the `nuxt-ui-code-lens` folder in VS Code
 2. Press **F5** (or go to *Run → Start Debugging*)
 
 VS Code compiles the TypeScript source, then opens a second window called **Extension Development Host** with the extension loaded.
