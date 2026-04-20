@@ -19,9 +19,16 @@ export function renderHtml(
   const origin = new URL(url).origin;
   const csp = ["default-src 'none'", `frame-src ${origin}`, "style-src 'unsafe-inline'", "script-src 'unsafe-inline'"].join('; ');
 
-  const propItems: TreeItem[] = props.map((p) => ({ name: p.name, children: p.values }));
+  const vModelPropNames = new Set(vModels.map((v) => v.name.toLowerCase()));
+  const vModelEventNames = new Set(vModels.map((v) => `update:${v.name}`.toLowerCase()));
+
+  const propItems: TreeItem[] = props
+    .map((p) => ({ name: p.name, children: p.values, isVModel: vModelPropNames.has(p.name.toLowerCase()) }))
+    .sort((a, b) => Number(b.isVModel) - Number(a.isVModel));
   const slotItems: TreeItem[] = slots.map((s) => ({ name: s.name, children: s.bindings }));
-  const eventItems: TreeItem[] = events.map((e) => ({ name: e }));
+  const eventItems: TreeItem[] = events
+    .map((e) => ({ name: e, isVModel: vModelEventNames.has(e.toLowerCase()) }))
+    .sort((a, b) => Number(b.isVModel) - Number(a.isVModel));
   const uiItems: TreeItem[] = uiKeys.map((k) => ({ name: k }));
 
   const vModelsSection = tagName ? renderVModelsSection(vModels, tagName) : '';

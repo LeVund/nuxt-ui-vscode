@@ -135,6 +135,14 @@ export const STYLES = `
       color: var(--vscode-list-activeSelectionForeground);
     }
 
+    .tree-item-badge {
+      margin-left: auto;
+      padding-left: 8px;
+      font-weight: 700;
+      color: var(--vscode-foreground);
+      flex-shrink: 0;
+    }
+
     .tree-empty {
       height: 22px;
       padding: 0 12px 0 24px;
