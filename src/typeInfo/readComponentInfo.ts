@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import type { ComponentInfo, PropInfo, SlotInfo } from '../core/types';
+import type { ComponentInfo, PropInfo, SlotInfo, VModelInfo } from '../core/types';
 import { resolveUiKeys } from './resolveUiKeys';
 
 async function loadDocumentSymbols(uri: vscode.Uri): Promise<{ symbols: vscode.DocumentSymbol[]; text: string }> {
@@ -181,7 +181,7 @@ export async function readComponentInfo(declarationFilePath: string): Promise<Co
   const uri = vscode.Uri.file(declarationFilePath);
   const { symbols, text } = await loadDocumentSymbols(uri);
 
-  if (symbols.length === 0) return { slots: [], props: [], events: [], uiKeys: [] };
+  if (symbols.length === 0) return { slots: [], props: [], events: [], vModels: [], uiKeys: [] };
 
   const propsSymbol = symbols.find((s) => s.name.endsWith('Props'));
   const slotsSymbol = symbols.find((s) => s.name.endsWith('Slots'));
@@ -191,6 +191,7 @@ export async function readComponentInfo(declarationFilePath: string): Promise<Co
   const slotBindingsMap = resolveSlotBindings(text);
   const { props, hasUi, eventsFromProps } = resolveProps(propsSymbol);
   const events = resolveEvents(emitsSymbol, text, eventsFromProps);
+  const { vModels, extraProps } = resolveVModels(props, events);
 
   // Resolve variant values from the theme file and match to props
   const variantPropsMap = resolveVariantProps(text);
@@ -203,7 +204,7 @@ export async function readComponentInfo(declarationFilePath: string): Promise<Co
     bindings: slotBindingsMap.get(name) ?? [],
   }));
 
-  const dedupedProps = [...new Set(props.map((p) => p.toLowerCase()))];
+  const dedupedProps = [...new Set([...props, ...extraProps].map((p) => p.toLowerCase()))];
   const propsInfo: PropInfo[] = dedupedProps.map((name) => {
     const variantKey = variantPropsMap.get(name);
     const values = variantKey ? variantValues.get(variantKey) ?? [] : [];
@@ -214,6 +215,32 @@ export async function readComponentInfo(declarationFilePath: string): Promise<Co
     slots,
     props: propsInfo,
     events: [...new Set(events.map((e) => e.toLowerCase()))],
+    vModels,
     uiKeys: [...new Set(uiKeys.map((k) => k.toLowerCase()))],
   };
+}
+
+function resolveVModels(props: string[], events: string[]): { vModels: VModelInfo[]; extraProps: string[] } {
+  const propByLower = new Map(props.map((p) => [p.toLowerCase(), p]));
+  const seen = new Set<string>();
+  const vModels: VModelInfo[] = [];
+  const extraProps: string[] = [];
+
+  for (const event of events) {
+    const lower = event.toLowerCase();
+    if (!lower.startsWith('update:')) continue;
+    const afterColon = event.slice('update:'.length);
+    const lowerName = afterColon.toLowerCase();
+    if (!lowerName || seen.has(lowerName)) continue;
+    seen.add(lowerName);
+
+    const existing = propByLower.get(lowerName);
+    if (existing) {
+      vModels.push({ name: existing });
+    } else {
+      vModels.push({ name: afterColon });
+      extraProps.push(afterColon);
+    }
+  }
+  return { vModels, extraProps };
 }

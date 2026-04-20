@@ -4,7 +4,7 @@ import { resolveDeclarationPath } from '../typeInfo/resolveDeclarationPath';
 import { readComponentInfo } from '../typeInfo/readComponentInfo';
 
 export async function resolveComponentInfo({ documentUri, tagOffset }: ComponentTagFileContext): Promise<ComponentInfo> {
-  const empty: ComponentInfo = { slots: [], props: [], events: [], uiKeys: [] };
+  const empty: ComponentInfo = { slots: [], props: [], events: [], vModels: [], uiKeys: [] };
 
   const document = await vscode.workspace.openTextDocument(documentUri);
   const namePosition = document.positionAt(tagOffset + 1);

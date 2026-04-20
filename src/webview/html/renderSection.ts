@@ -3,7 +3,10 @@ import { escapeAttr, escapeHtml } from './escape';
 export interface TreeItem {
   name: string;
   children?: string[];
+  isVModel?: boolean;
 }
+
+const V_BADGE = '<span class="tree-item-badge">V</span>';
 
 export function renderSection(
   id: string,
@@ -16,6 +19,7 @@ export function renderSection(
     values.length > 0
       ? `<ul class="tree-list">${values
           .map((v) => {
+            const badge = v.isVModel ? V_BADGE : '';
             if (v.children && v.children.length > 0) {
               const subId = `${id}-${escapeAttr(v.name)}`;
               const emptyItem = `<li class="tree-item tree-sub-item tree-sub-empty" role="treeitem" tabindex="0" ${items[0].dataAttr}="${escapeAttr(v.name)}">empty</li>`;
@@ -29,12 +33,12 @@ export function renderSection(
               return `<li class="tree-group" role="treeitem">
                 <div class="tree-group-header" role="button" tabindex="0" data-subtree="${subId}" ${items[0].dataAttr}="${escapeAttr(v.name)}">
                   <span class="tree-group-chevron"></span>
-                  ${escapeHtml(items[0].label(v.name))}
+                  ${escapeHtml(items[0].label(v.name))}${badge}
                 </div>
                 <ul class="tree-sub-list" id="${subId}">${subItems}</ul>
               </li>`;
             }
-            return `<li class="tree-item" role="treeitem" tabindex="0" ${items[0].dataAttr}="${escapeAttr(v.name)}">${escapeHtml(items[0].label(v.name))}</li>`;
+            return `<li class="tree-item" role="treeitem" tabindex="0" ${items[0].dataAttr}="${escapeAttr(v.name)}">${escapeHtml(items[0].label(v.name))}${badge}</li>`;
           })
           .join('\n')}</ul>`
       : `<div class="tree-empty">${escapeHtml(emptyLabel)}</div>`;

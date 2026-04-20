@@ -7,8 +7,8 @@ export function getParsedTag(text: string, tagStart: number, tagName: string): P
   while (i < text.length) {
     const ch = text[i];
 
-    if (isInString && ch === isInString) {
-      isInString = null;
+    if (isInString) {
+      if (ch === isInString) isInString = null;
     } else if (ch === '"' || ch === "'") {
       isInString = ch;
     } else if (ch === '/' && i + 1 < text.length && text[i + 1] === '>') {

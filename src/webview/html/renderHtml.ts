@@ -1,10 +1,11 @@
 import { toKebabCase } from '../../parsing/caseUtils';
-import type { PropInfo, SlotInfo } from '../../core/types';
+import type { PropInfo, SlotInfo, VModelInfo } from '../../core/types';
 import { escapeAttr } from './escape';
 import { STYLES } from './styles';
 import { WEBVIEW_SCRIPT } from './webviewScript';
 import { renderSection } from './renderSection';
 import type { TreeItem } from './renderSection';
+import { renderVModelsSection } from './renderVModelsSection';
 
 export function renderHtml(
   url: string,
@@ -12,16 +13,25 @@ export function renderHtml(
   slots: SlotInfo[],
   props: PropInfo[],
   events: string[],
+  vModels: VModelInfo[],
   uiKeys: string[],
 ): string {
   const origin = new URL(url).origin;
   const csp = ["default-src 'none'", `frame-src ${origin}`, "style-src 'unsafe-inline'", "script-src 'unsafe-inline'"].join('; ');
 
-  const propItems: TreeItem[] = props.map((p) => ({ name: p.name, children: p.values }));
+  const vModelPropNames = new Set(vModels.map((v) => v.name.toLowerCase()));
+  const vModelEventNames = new Set(vModels.map((v) => `update:${v.name}`.toLowerCase()));
+
+  const propItems: TreeItem[] = props
+    .map((p) => ({ name: p.name, children: p.values, isVModel: vModelPropNames.has(p.name.toLowerCase()) }))
+    .sort((a, b) => Number(b.isVModel) - Number(a.isVModel));
   const slotItems: TreeItem[] = slots.map((s) => ({ name: s.name, children: s.bindings }));
-  const eventItems: TreeItem[] = events.map((e) => ({ name: e }));
+  const eventItems: TreeItem[] = events
+    .map((e) => ({ name: e, isVModel: vModelEventNames.has(e.toLowerCase()) }))
+    .sort((a, b) => Number(b.isVModel) - Number(a.isVModel));
   const uiItems: TreeItem[] = uiKeys.map((k) => ({ name: k }));
 
+  const vModelsSection = tagName ? renderVModelsSection(vModels, tagName) : '';
   const propsSection = tagName
     ? renderSection(
         'props-accordion',
@@ -69,6 +79,7 @@ export function renderHtml(
 </head>
 <body>
   <div class="layout">
+    ${vModelsSection}
     ${propsSection}
     ${eventsSection}
     ${slotsSection}
