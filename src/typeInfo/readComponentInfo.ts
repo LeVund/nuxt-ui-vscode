@@ -51,7 +51,7 @@ function extractTopLevelKeys(text: string, blockPattern: RegExp): string[] {
 }
 
 function resolveSlots(slotsSymbol: vscode.DocumentSymbol | undefined, text: string): string[] {
-  const fromSymbols = slotsSymbol?.children.map((c) => c.name) ?? [];
+  const fromSymbols = slotsSymbol?.children.map((c) => c.name.replaceAll("'", '').replaceAll('"', '')) ?? [];
   return fromSymbols.length > 0 ? fromSymbols : extractTopLevelKeys(text, /(?:interface|type)\s+\w*Slots[^{]*\{/);
 }
 
