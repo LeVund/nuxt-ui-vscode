@@ -11,6 +11,10 @@
   "categories": [
     "Other"
   ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/LeVund/nuxt-ui-vscode"
+  },
   "keywords": [
     "nuxt",
     "nuxt-ui",
