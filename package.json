@@ -7,6 +7,7 @@
   "engines": {
     "vscode": "^1.85.0"
   },
+  "icon": "resources/logo.png",
   "categories": [
     "Other"
   ],
@@ -26,14 +27,14 @@
         {
           "id": "nuxtUiCodeLens",
           "title": "Nuxt UI Code Lens",
-          "icon": "resources/nuxt-ui-icon.svg"
+          "icon": "resources/panel-icon.svg"
         }
       ]
     },
     "views": {
       "nuxtUiCodeLens": [
         {
-          "icon": "resources/nuxt-ui-icon.svg",
+          "icon": "resources/panel-icon.svg",
           "type": "webview",
           "id": "nuxtUiCodeLens.docView",
           "name": "Documentation"
