@@ -1,6 +1,6 @@
 {
-  "name": "nuxt-ui-code-lens",
-  "displayName": "NuxtUi CodeLens",
+  "name": "nuxtui-codelens",
+  "displayName": "NuxtUI CodeLens",
   "description": "Nuxt UI documentation and helpers inside VS Code",
   "version": "1.1.0",
   "publisher": "LeVund",
@@ -30,7 +30,7 @@
       "activitybar": [
         {
           "id": "nuxtUiCodeLens",
-          "title": "NuxtUi CodeLens",
+          "title": "NuxtUI CodeLens",
           "icon": "resources/panel-icon.svg"
         }
       ]
@@ -46,7 +46,7 @@
       ]
     },
     "configuration": {
-      "title": "Nuxt UI Code Lens",
+      "title": "NuxtUI CodeLens",
       "properties": {
         "nuxtUiCodeLens.version": {
           "type": "string",

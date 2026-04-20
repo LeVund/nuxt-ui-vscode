@@ -1,4 +1,4 @@
-# NuxtUi CodeLens
+# NuxtUI CodeLens
 
 VS Code extension that brings [Nuxt UI](https://ui.nuxt.com) component intelligence directly into your editor.
 
