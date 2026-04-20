@@ -13,7 +13,7 @@ export function registerProviders(context: vscode.ExtensionContext): void {
   // Refresh providers when relevant settings change
   context.subscriptions.push(
     vscode.workspace.onDidChangeConfiguration((e) => {
-      if (e.affectsConfiguration('nuxtUi.codeLens.enabled')) {
+      if (e.affectsConfiguration('nuxtUiCodeLens.codeLens.enabled')) {
         codeLens.refresh();
       }
     }),

@@ -1,12 +1,13 @@
 {
-  "name": "nuxt-ui-vscode",
-  "displayName": "Nuxt UI helper",
+  "name": "nuxt-ui-code-lens",
+  "displayName": "Nuxt UI Code Lens",
   "description": "Nuxt UI documentation and helpers inside VS Code",
-  "version": "0.0.1",
-  "publisher": "leVund",
+  "version": "1.0.0",
+  "publisher": "LeVund",
   "engines": {
     "vscode": "^1.85.0"
   },
+  "icon": "resources/logo.png",
   "categories": [
     "Other"
   ],
@@ -24,26 +25,26 @@
     "viewsContainers": {
       "activitybar": [
         {
-          "id": "nuxtUi",
-          "title": "Nuxt UI",
-          "icon": "resources/nuxt-ui-icon.svg"
+          "id": "nuxtUiCodeLens",
+          "title": "Nuxt UI Code Lens",
+          "icon": "resources/panel-icon.svg"
         }
       ]
     },
     "views": {
-      "nuxtUi": [
+      "nuxtUiCodeLens": [
         {
-          "icon": "resources/nuxt-ui-icon.svg",
+          "icon": "resources/panel-icon.svg",
           "type": "webview",
-          "id": "nuxtUi.docView",
+          "id": "nuxtUiCodeLens.docView",
           "name": "Documentation"
         }
       ]
     },
     "configuration": {
-      "title": "Nuxt UI helper",
+      "title": "Nuxt UI Code Lens",
       "properties": {
-        "nuxtUi.version": {
+        "nuxtUiCodeLens.version": {
           "type": "string",
           "enum": [
             "auto",
@@ -53,7 +54,7 @@
           "default": "auto",
           "description": "Which Nuxt UI documentation version to display. 'auto' reads the installed @nuxt/ui version from the workspace package.json."
         },
-        "nuxtUi.codeLens.enabled": {
+        "nuxtUiCodeLens.codeLens.enabled": {
           "type": "boolean",
           "default": true,
           "description": "Show a CodeLens above lines containing Nuxt UI component tags."
