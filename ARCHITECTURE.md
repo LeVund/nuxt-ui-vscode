@@ -91,13 +91,13 @@ VS Code closes all .vue files
 | ----------------------------------------- | -------------------------------------------------- | ------------------------------------------------------ |
 | `.vue` file opened                        | `activate()`                                       | Registers all providers & commands                     |
 | `package.json` saved                      | `VersionService` watcher                           | `refresh()` → re-detects version → fires `onDidChange` |
-| `nuxtUi.version` setting changed          | `VersionService`                                   | Same as above                                          |
-| `nuxtUi.inlayHints.enabled` changed       | `registerProviders` config listener                | `inlayHints.refresh()` clears & redraws hints          |
+| `nuxtUiCodeLens.version` setting changed          | `VersionService`                                   | Same as above                                          |
+| `nuxtUiCodeLens.inlayHints.enabled` changed       | `registerProviders` config listener                | `inlayHints.refresh()` clears & redraws hints          |
 | Cursor enters view range                  | `provideInlayHints()`                              | Scans range, returns `⚡` hints for each tag found     |
 | Mouse hovers `<UComponent>`               | `provideHover()`                                   | Renders Markdown tooltip with doc & menu links         |
-| User clicks `⚡` hint                     | `nuxtUiHelper.openFromVSCode`                      | Opens docs panel with full insertion context           |
-| User clicks "Open documentation" in hover | `nuxtUi.openComponentByName`                       | Opens docs panel for that component (no insertion ctx) |
-| User clicks "More actions…" in hover      | `nuxtUiHelper.showComponentMenu`                   | Opens docs panel for that component                    |
+| User clicks `⚡` hint                     | `nuxtUiCodeLens.openFromVSCode`                      | Opens docs panel with full insertion context           |
+| User clicks "Open documentation" in hover | `nuxtUiCodeLens.openComponentByName`                       | Opens docs panel for that component (no insertion ctx) |
+| User clicks "More actions…" in hover      | `nuxtUiCodeLens.showComponentMenu`                   | Opens docs panel for that component                    |
 | User picks component from QuickPick       | `pickAndOpenComponent()` → `panel.openComponent()` | Opens docs panel without insertion UI                  |
 | User clicks slot button in webview        | `insertSlot` message → `insertSlot()`              | Injects `<template #name>` in the editor               |
 | User clicks prop button in webview        | `insertProp` message → `insertProp()`              | Injects `:prop-name=""` attribute in the editor        |
@@ -125,7 +125,7 @@ Entry point called once when the first `.vue` file is opened. Delegates the heav
 
 | File                                                        | Role                                                                                                                                                                   |
 | ----------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [registerProviders.ts](src/activation/registerProviders.ts) | Registers `NuxtUiInlayHintsProvider` + `NuxtUiHoverProvider` against `{ language: 'vue', scheme: 'file' }`; also wires the `nuxtUi.inlayHints.enabled` config listener |
+| [registerProviders.ts](src/activation/registerProviders.ts) | Registers `NuxtUiInlayHintsProvider` + `NuxtUiHoverProvider` against `{ language: 'vue', scheme: 'file' }`; also wires the `nuxtUiCodeLens.inlayHints.enabled` config listener |
 | [registerCommands.ts](src/activation/registerCommands.ts)   | Registers all 5 commands declared in `Commands` enum (3 public + 2 internal)                                                                                           |
 
 ---
@@ -136,14 +136,14 @@ Detects which Nuxt UI version the workspace uses and emits a change event when i
 
 | Function / Method         | File                                                             | Role                                                                                          |
 | ------------------------- | ---------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
-| `VersionService`          | [VersionService.ts](src/version/VersionService.ts)               | Watches `**/package.json` and the `nuxtUi.version` setting; exposes `current` + `onDidChange` |
+| `VersionService`          | [VersionService.ts](src/version/VersionService.ts)               | Watches `**/package.json` and the `nuxtUiCodeLens.version` setting; exposes `current` + `onDidChange` |
 | `refresh()`               | [VersionService.ts](src/version/VersionService.ts)               | Re-runs detection and fires `onDidChange` if version changed                                  |
 | `detectFromPackageJson()` | [detectFromPackageJson.ts](src/version/detectFromPackageJson.ts) | Walks workspace folders, reads `@nuxt/ui` dep, returns `VersionInfo`                          |
 | `parseMajor(range)`       | [parseMajor.ts](src/version/parseMajor.ts)                       | Extracts major number from a semver range (`^4.0.0` → `4`)                                    |
 
 Resolution order (in `VersionService.resolve()`):
 
-1. `nuxtUi.version` setting if `v3` or `v4`
+1. `nuxtUiCodeLens.version` setting if `v3` or `v4`
 2. `@nuxt/ui` major from workspace `package.json`
 3. Default: v4 (`https://ui.nuxt.com`); v3 maps to `https://ui3.nuxt.com`
 
@@ -159,7 +159,7 @@ Places a clickable `⚡` glyph before every Nuxt UI opening tag in the visible r
 | `refresh()`                          | Fires `_onDidChange` to force VS Code to re-request all hints        |
 | `dispose()`                          | Cleans up the internal `EventEmitter`                                |
 
-Each hint carries the `nuxtUiHelper.openFromVSCode` command with `[tagName, document.uri.toString(), tagOffset]` so clicking it opens the docs panel with full insertion context.
+Each hint carries the `nuxtUiCodeLens.openFromVSCode` command with `[tagName, document.uri.toString(), tagOffset]` so clicking it opens the docs panel with full insertion context.
 
 ---
 
@@ -171,7 +171,7 @@ Shows a tooltip with action links when hovering over a `<UComponent>` tag.
 | ---------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
 | `provideHover(document, position)` | Detects the tag under the cursor via `findComponentAt()`, builds a Markdown hover with two trusted command links |
 
-The tooltip contains: **Open documentation** (`nuxtUi.openComponentByName`) and **More actions…** (`nuxtUiHelper.showComponentMenu`).
+The tooltip contains: **Open documentation** (`nuxtUiCodeLens.openComponentByName`) and **More actions…** (`nuxtUiCodeLens.showComponentMenu`).
 
 ---
 
@@ -215,11 +215,11 @@ Command IDs are centralized in the `Commands` enum to avoid string drift.
 
 | Command ID                       | Source                                                    | Role                                                                            |
 | -------------------------------- | --------------------------------------------------------- | ------------------------------------------------------------------------------- |
-| `nuxtUiHelper.openHome`          | [commandIds.enum.ts](src/commands/commandIds.enum.ts)     | Reserved for the home panel (currently a no-op handler)                         |
-| `nuxtUiHelper.openComponent`     | [openComponent.ts](src/commands/openComponent.ts)         | Shows a searchable QuickPick of all known components                            |
-| `nuxtUiHelper.showComponentMenu` | [componentMenu.ts](src/commands/componentMenu.ts)         | Opens the docs panel for a tag, with insertion UI when context is provided      |
-| `nuxtUi.openComponentByName`     | [registerCommands.ts](src/activation/registerCommands.ts) | Internal — opens the panel from the hover tooltip (no insertion ctx)            |
-| `nuxtUiHelper.openFromVSCode`    | [registerCommands.ts](src/activation/registerCommands.ts) | Internal — wired to the inlay hint click; passes full `ComponentTagFileContext` |
+| `nuxtUiCodeLens.openHome`          | [commandIds.enum.ts](src/commands/commandIds.enum.ts)     | Reserved for the home panel (currently a no-op handler)                         |
+| `nuxtUiCodeLens.openComponent`     | [openComponent.ts](src/commands/openComponent.ts)         | Shows a searchable QuickPick of all known components                            |
+| `nuxtUiCodeLens.showComponentMenu` | [componentMenu.ts](src/commands/componentMenu.ts)         | Opens the docs panel for a tag, with insertion UI when context is provided      |
+| `nuxtUiCodeLens.openComponentByName`     | [registerCommands.ts](src/activation/registerCommands.ts) | Internal — opens the panel from the hover tooltip (no insertion ctx)            |
+| `nuxtUiCodeLens.openFromVSCode`    | [registerCommands.ts](src/activation/registerCommands.ts) | Internal — wired to the inlay hint click; passes full `ComponentTagFileContext` |
 
 `showComponentMenu` and `openFromVSCode` receive a `ComponentTagFileContext` (`documentUri` + `tagOffset` + `tagName`) so the insertion functions know exactly where to write in the source file.
 
@@ -304,6 +304,6 @@ This approach automatically picks up whatever package manager layout is in use (
 
 | Setting                     | Type                     | Default  | Effect                                                        |
 | --------------------------- | ------------------------ | -------- | ------------------------------------------------------------- |
-| `nuxtUi.version`            | `"auto" \| "v3" \| "v4"` | `"auto"` | Forces a specific docs version; `"auto"` reads `package.json` |
-| `nuxtUi.inlayHints.enabled` | `boolean`                | `true`   | Shows / hides `⚡` inlay hints                                |
-| `nuxtUi.hover.enabled`      | `boolean`                | `true`   | Shows / hides hover tooltips                                  |
+| `nuxtUiCodeLens.version`            | `"auto" \| "v3" \| "v4"` | `"auto"` | Forces a specific docs version; `"auto"` reads `package.json` |
+| `nuxtUiCodeLens.inlayHints.enabled` | `boolean`                | `true`   | Shows / hides `⚡` inlay hints                                |
+| `nuxtUiCodeLens.hover.enabled`      | `boolean`                | `true`   | Shows / hides hover tooltips                                  |

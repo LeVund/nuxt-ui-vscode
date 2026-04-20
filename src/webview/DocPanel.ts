@@ -18,7 +18,7 @@ import { removeAttribute } from '../insertions/removeAttribute';
 const SYNC_DEBOUNCE_MS = 120;
 
 export class DocPanel implements vscode.WebviewViewProvider {
-  public static readonly VIEW_ID = 'nuxtUi.docView';
+  public static readonly VIEW_ID = 'nuxtUiCodeLens.docView';
   private view: vscode.WebviewView | undefined;
   private _currentContext: ComponentTagFileContext | undefined;
   private version: VersionService;
