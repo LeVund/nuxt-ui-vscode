@@ -3,7 +3,7 @@
   "displayName": "Nuxt UI Code Lens",
   "description": "Nuxt UI documentation and helpers inside VS Code",
   "version": "0.0.1",
-  "publisher": "leVund",
+  "publisher": "LeVund",
   "engines": {
     "vscode": "^1.85.0"
   },
