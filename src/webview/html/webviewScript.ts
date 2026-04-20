@@ -67,6 +67,43 @@ export const WEBVIEW_SCRIPT = `
       header.addEventListener('dblclick', function() { handleTreeItem(header); });
     });
 
+    // Remove (cross) button
+    document.querySelectorAll('.tree-item-remove').forEach(function(btn) {
+      btn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        e.preventDefault();
+        var kind = btn.dataset.removeKind;
+        var key = btn.dataset.removeKey;
+        if (kind && typeof key === 'string') {
+          vscode.postMessage({ command: 'removeAttr', kind: kind, key: key });
+        }
+      });
+    });
+
+    // Apply used state from the extension
+    function applyUsedState(used) {
+      document.querySelectorAll('.tree-item.is-used, .tree-group-header.is-used').forEach(function(el) {
+        el.classList.remove('is-used');
+      });
+      if (!used) return;
+
+      document.querySelectorAll('.tree-item-remove').forEach(function(btn) {
+        var kind = btn.dataset.removeKind;
+        var key = btn.dataset.removeKey;
+        var set = kind === 'prop' ? used.props : kind === 'event' ? used.events : kind === 'vmodel' ? used.vModels : null;
+        if (!set) return;
+        if (set.indexOf(key) === -1) return;
+        var host = btn.closest('.tree-item') || btn.closest('.tree-group-header');
+        if (host) host.classList.add('is-used');
+      });
+    }
+
+    window.addEventListener('message', function(event) {
+      var msg = event.data;
+      if (!msg || msg.command !== 'syncUsed') return;
+      applyUsedState(msg.used);
+    });
+
     // Resize handles
     document.querySelectorAll('.resize-handle').forEach(function(handle) {
       var targetId = handle.dataset.resize;

@@ -143,6 +143,47 @@ export const STYLES = `
       flex-shrink: 0;
     }
 
+    /* ---- Remove (cross) button for used items ---- */
+    .tree-item-remove {
+      display: none;
+      margin-left: auto;
+      padding: 0 4px;
+      height: 16px;
+      width: 16px;
+      line-height: 16px;
+      font-size: 14px;
+      text-align: center;
+      background: transparent;
+      border: none;
+      color: var(--vscode-foreground);
+      cursor: pointer;
+      border-radius: 2px;
+      flex-shrink: 0;
+      opacity: 0.7;
+    }
+
+    .tree-item-remove:hover {
+      background: var(--vscode-toolbar-hoverBackground, rgba(255,255,255,0.08));
+      opacity: 1;
+    }
+
+    .tree-item-remove:focus-visible {
+      outline: 1px solid var(--vscode-focusBorder);
+      outline-offset: -1px;
+    }
+
+    .tree-item.is-used > .tree-item-remove,
+    .tree-group-header.is-used > .tree-item-remove {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .tree-item.is-used .tree-item-badge,
+    .tree-group-header.is-used .tree-item-badge {
+      margin-left: 0;
+    }
+
     .tree-empty {
       height: 22px;
       padding: 0 12px 0 24px;
