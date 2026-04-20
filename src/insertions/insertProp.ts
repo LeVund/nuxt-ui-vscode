@@ -4,12 +4,12 @@ import { getTagContext } from '../editor/getTagContext';
 import { toKebabCase } from '../parsing/caseUtils';
 
 const isPropsAlreadyPresent = (openTagText: string, attrName: string): boolean => {
-  const regex = new RegExp(`\\b:?${attrName}\\s*=|v-bind:${attrName}\\s*=`);
+  const regex = new RegExp(`\\s(?::?${attrName}|v-bind:${attrName})\\s*=`);
   return regex.test(openTagText);
 };
 
 function findPropValueRange(openTagText: string, attrName: string): { start: number; end: number } | undefined {
-  const regex = new RegExp(`(?:\\b:?${attrName}|v-bind:${attrName})\\s*=\\s*(["'])`);
+  const regex = new RegExp(`\\s(?::?${attrName}|v-bind:${attrName})\\s*=\\s*(["'])`);
   const match = regex.exec(openTagText);
   if (!match) return undefined;
   const quote = match[1];
